@@ -20,6 +20,4 @@ class ExampleController extends Controller
         var_dump($request->all());
         return "demo";
     }
-
-    //
 }
