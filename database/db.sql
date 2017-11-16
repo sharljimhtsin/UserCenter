@@ -46,3 +46,18 @@ CREATE TABLE `user_center`.`mapping` (
   `create_time` DATETIME    NULL,
   PRIMARY KEY (`mapping_id`)
 );
+
+
+CREATE TABLE `user_center`.`token` (
+  `user_id` BIGINT(20)  NULL,
+  `token`   VARCHAR(45) NULL,
+  `ttl`     BIGINT(20)  NULL
+);
+
+
+CREATE TABLE `user_center`.`sms_code` (
+  `telephone` BIGINT(20) NOT NULL,
+  `code`      INT        NULL,
+  `ttl`       BIGINT(20) NULL,
+  PRIMARY KEY (`telephone`)
+);
