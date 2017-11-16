@@ -24,4 +24,9 @@ class UserController extends Controller
     {
         return "user";
     }
+
+    public function login()
+    {
+        return "login";
+    }
 }
