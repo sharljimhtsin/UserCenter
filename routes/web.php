@@ -26,3 +26,12 @@ $router->group(['prefix' => 'user', 'middleware' => ['user']], function () use (
     $router->get('login', 'UserController@login');
     $router->get('info', 'UserController@info');
 });
+
+$router->group(['prefix' => 'account', 'middleware' => []], function () use ($router) {
+    $router->post('index', 'AccountController@index');
+    $router->post('login', 'AccountController@login');
+    $router->post('info', 'AccountController@info');
+    $router->get("/", function () use ($router) {
+        return "/";
+    });
+});
