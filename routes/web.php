@@ -24,4 +24,5 @@ $router->get('/demo', ['uses' => 'ExampleController@demo']);
 $router->group(['prefix' => 'user', 'middleware' => ['user']], function () use ($router) {
     $router->get('index', 'UserController@index');
     $router->get('login', 'UserController@login');
+    $router->get('info', 'UserController@info');
 });

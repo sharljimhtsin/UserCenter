@@ -7,7 +7,9 @@
     "require": {
         "php": ">=7.0",
         "laravel/lumen-framework": "5.5.*",
-        "vlucas/phpdotenv": "~2.2"
+        "vlucas/phpdotenv": "~2.2",
+        "barryvdh/laravel-ide-helper": "^2.4",
+        "doctrine/dbal": "^2.6"
     },
     "require-dev": {
         "fzaninotto/faker": "~1.4",
@@ -28,7 +30,15 @@
     "scripts": {
         "post-root-package-install": [
             "php -r \"copy('.env.example', '.env');\""
-        ]
+        ],
+        "scripts":{
+            "post-update-cmd": [
+                "Illuminate\\Foundation\\ComposerScripts::postUpdate",
+                "php artisan ide-helper:generate",
+                "php artisan ide-helper:meta",
+                "php artisan optimize"
+            ]
+        }
     },
     "minimum-stability": "dev",
     "prefer-stable": true,

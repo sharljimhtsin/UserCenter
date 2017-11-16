@@ -9,6 +9,9 @@
 namespace App\Http\Controllers;
 
 
+use App\User;
+use Illuminate\Http\Request;
+
 class UserController extends Controller
 {
 
@@ -17,16 +20,28 @@ class UserController extends Controller
      */
     public function __construct()
     {
-        //
+        $this->middleware("user", ['except' => ['login']]);
     }
 
-    public function index()
+    public function index(Request $request)
     {
         return "user";
     }
 
-    public function login()
+    public function login(Request $request)
     {
-        return "login";
+        $userList = User::all();
+        var_dump($userList);
+
+        return response()->json(["aaa" => "bb"]);
+    }
+
+    public function info(Request $request)
+    {
+        $flight = User::query()->where("username", "=", "rinimabi")->first();
+        $flight->ip = "2222222";
+        $flight->save();
+//        var_dump($flight);
+        return "";
     }
 }

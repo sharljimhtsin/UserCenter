@@ -1,4 +1,10 @@
 <?php
+/**
+ * Created by PhpStorm.
+ * User: Administrator
+ * Date: 2017/11/16
+ * Time: 17:12:18
+ */
 
 namespace App;
 
@@ -8,19 +14,19 @@ use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
 use Illuminate\Database\Eloquent\Model;
 
-class User extends Model implements AuthenticatableContract, AuthorizableContract
+class Account extends Model implements AuthenticatableContract, AuthorizableContract
 {
     use Authenticatable, Authorizable;
 
-    public $table = 'user';
+    public $table = 'account';
 
-    public $primaryKey = 'user_id';
+    public $primaryKey = 'account_id';
 
     public $incrementing = true;
 
     public $keyType = 'int';
 
-    public $timestamps = true;
+    public $timestamps = false;
 
     public $dateFormat = 'U';
 
@@ -34,14 +40,14 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      *
      * @var array
      */
-    protected $fillable = [
-        'nickname', 'avatar', 'signature'
-    ];
+    protected $fillable = [];
 
     /**
      * The attributes excluded from the model's JSON form.
      *
      * @var array
      */
-    protected $hidden = [];
+    protected $hidden = [
+        'password',
+    ];
 }
