@@ -23,7 +23,7 @@ class AccountController extends Controller
      */
     public function __construct()
     {
-        $this->middleware("token", ["only" => ["index", "sendSmsCode", "bindPhone"]]);
+        $this->middleware("token", ["only" => ["index", "sendSmsCode", "bindPhone", "modifyPassword"]]);
     }
 
     public function index(Request $request)
@@ -178,6 +178,62 @@ class AccountController extends Controller
             }
         } else {
             return response()->json(["error" => "user not exist"]);
+        }
+    }
+
+    public function XXX(Request $request)
+    {
+
+    }
+
+    public function modifyPassword(Request $request)
+    {
+        $user_id = $request->input("user_id", "0000");
+        $oldPassword = $request->input("oldPassword", "4321");
+        $newPassword = $request->input("newPassword", "1234");
+        $accountResult = Account::query()->where([["union_user_id", "=", $user_id], ["account_type", "=", Account::NORMAL_LOGIN], ["status", "=", Account::NORMAL_STATUS]])->first();
+        if (is_null($accountResult)) {
+            return response()->json(["error" => "account not exist"]);
+        }
+        $accountObj = $accountResult->toArray();
+        if (is_null($accountObj["password"]) || md5($oldPassword) == $accountObj["password"]) {
+            $accountObj["password"] = md5($newPassword);
+            $accountResult->fill($accountObj)->save();
+            return response()->json(["account" => $accountObj]);
+        } else {
+            return response()->json(["error" => "password not match"]);
+        }
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $telephone = $request->input("telephone", "13800138000");
+        $smsCode = $request->input("smsCode", "0000");
+        $newPassword = $request->input("newPassword", "1234");
+        $smsCodeResult = SmsCode::query()->find($telephone);
+        if (is_null($smsCodeResult)) {
+            return response()->json(["error" => "smsCode error"]);
+        }
+        $smsCodeObject = $smsCodeResult->toArray();
+        if ($smsCode != $smsCodeObject["code"] || time() > $smsCodeObject["ttl"]) {
+            return response()->json(["error" => "smsCode invalid"]);
+        }
+        $accountResult = Account::query()->where([["user_key", "=", $telephone], ["account_type", "=", Account::TELEPHONE_LOGIN], ["status", "=", Account::NORMAL_STATUS]])->first();
+        if (is_null($accountResult)) {
+            return response()->json(["error" => "account not exist"]);
+        }
+        $accountObj = $accountResult->toArray();
+        if (is_null($accountObj["union_user_id"])) {
+            return response()->json(["error" => "account error"]);
+        }
+        $modifyResult = Account::query()->where([["union_user_id", "=", $accountObj["union_user_id"]], ["account_type", "=", Account::NORMAL_LOGIN], ["status", "=", Account::NORMAL_STATUS]])->first();
+        if ($modifyResult) {
+            $modifyObj = $modifyResult->toArray();
+            $modifyObj["password"] = md5($newPassword);
+            $modifyResult->fill($modifyObj)->save();
+            return response()->json(["account" => $modifyObj]);
+        } else {
+            return response()->json(["error" => "account not exist"]);
         }
     }
 
