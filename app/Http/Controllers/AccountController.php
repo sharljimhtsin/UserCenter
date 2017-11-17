@@ -68,6 +68,37 @@ class AccountController extends Controller
         }
     }
 
+    public function telephoneLogin(Request $request)
+    {
+        $telephone = $request->input("telephone", "13800138000");
+        $smsCode = $request->input("smsCode", "0000");
+        $smsCodeResult = SmsCode::query()->find($telephone);
+        if (is_null($smsCodeResult)) {
+            return response()->json(["error" => "smsCode error"]);
+        }
+        $smsCodeObject = $smsCodeResult->toArray();
+        if ($smsCode != $smsCodeObject["code"] || time() > $smsCodeObject["ttl"]) {
+            return response()->json(["error" => "smsCode invalid"]);
+        }
+        $accountResult = Account::query()->where([["user_key", "=", $telephone], ["account_type", "=", Account::TELEPHONE_LOGIN]])->first();
+        if (is_null($accountResult)) {
+            return response()->json(["error" => "account not exist"]);
+        }
+        $accountObj = $accountResult->toArray();
+        if (is_null($accountObj["union_user_id"])) {
+            return response()->json(["error" => "account error"]);
+        }
+        $userResult = User::query()->find($accountObj["union_user_id"]);
+        if ($userResult) {
+            $userObj = $userResult->toArray();
+            $tokenStr = $this->getRandomToken();
+            Token::query()->updateOrCreate(["user_id" => $userObj["user_id"]], ["user_id" => $userObj["user_id"], "token" => $tokenStr, "ttl" => $this->getTokenTTLTime()]);
+            return response()->json(["token" => $tokenStr, "account" => $accountObj, "user" => $userObj]);
+        } else {
+            return response()->json(["error" => "user not exist"]);
+        }
+    }
+
     public function tempLogin(Request $request)
     {
         $user_key = $request->input("device_id", "qwerty");
@@ -108,6 +139,14 @@ class AccountController extends Controller
         } else {
             return response()->json(["error" => "user not exist"]);
         }
+    }
+
+    public function sendSmsCodeNoToken(Request $request)
+    {
+        $telephone = $request->input("telephone", "13800138000");
+        $smsCodeStr = $this->genRandomSmsCode();
+        SmsCode::query()->updateOrCreate(["telephone" => $telephone], ["telephone" => $telephone, "code" => $smsCodeStr, "ttl" => $this->getSmsCodeTTLTime()]);
+        return response()->json(["smsCode" => $smsCodeStr]);
     }
 
     public function bindPhone(Request $request)
