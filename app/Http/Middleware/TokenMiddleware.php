@@ -8,6 +8,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Token;
 use Illuminate\Http\Request;
 use Closure;
 use Illuminate\Http\Response;
@@ -17,7 +18,21 @@ class TokenMiddleware
     public function handle(Request $request, Closure $next)
     {
         if (!$request->exists("token")) {
-            return "token error";
+            return \response()->json(["error" => "token null"]);
+        }
+        if (!$request->exists("user_id")) {
+            return \response()->json(["error" => "user_id null"]);
+        }
+        $token = $request->input("token");
+        $user_id = $request->input("user_id");
+        $tokenResult = Token::query()->find($user_id);
+        if ($tokenResult) {
+            $tokenObj = $tokenResult->toArray();
+            if ($token != $tokenObj["token"]) {
+                return \response()->json(["error" => "token error"]);
+            }
+        } else {
+            return \response()->json(["error" => "token error"]);
         }
         return $next($request);
     }

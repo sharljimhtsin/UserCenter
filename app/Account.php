@@ -24,6 +24,9 @@ use Illuminate\Database\Eloquent\Model;
  * `status`        TINYINT(5)  NULL,
  * PRIMARY KEY (`account_id`)
  * );
+ *
+ * ALTER TABLE `user_center`.`account`
+ * CHANGE COLUMN `account_id` `account_id` BIGINT(20) NOT NULL AUTO_INCREMENT ;
  **/
 class Account extends Model implements AuthenticatableContract, AuthorizableContract
 {
@@ -45,13 +48,20 @@ class Account extends Model implements AuthenticatableContract, AuthorizableCont
 
     const CREATED_AT = 'create_time';
     const UPDATED_AT = 'modify_time';
+    // account login type
+    const TEMP_LOGIN = -1;
+    const NORMAL_LOGIN = 0;
+    const QQ_LOGIN = 1;
+    const WECHAT_LOGIN = 2;
+    const WEIBO_LOGIN = 3;
+
 
     /**
      * The attributes that are mass assignable.
      *
      * @var array
      */
-    protected $fillable = [];
+    protected $fillable = ['account_id', 'user_key', 'password', 'account_type', 'union_user_id', 'status'];
 
     /**
      * The attributes excluded from the model's JSON form.

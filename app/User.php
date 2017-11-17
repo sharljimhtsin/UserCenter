@@ -33,13 +33,13 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
 
     public $primaryKey = 'user_id';
 
-    public $incrementing = true;
+    public $incrementing = false;
 
     public $keyType = 'int';
 
     public $timestamps = true;
 
-    public $dateFormat = 'U';
+    public $dateFormat = 'Y-m-d H:i:s';
 
     public $connection = 'mysql';
 
@@ -52,7 +52,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      * @var array
      */
     protected $fillable = [
-        'nickname', 'avatar', 'signature'
+        'user_id', 'telephone', 'nickname', 'avatar', 'birthday', 'sex', 'signature', 'user_source', 'role', 'status'
     ];
 
     /**

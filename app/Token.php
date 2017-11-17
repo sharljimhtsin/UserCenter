@@ -17,6 +17,10 @@ use Illuminate\Database\Eloquent\Model;
  * `token`   VARCHAR(45) NULL,
  * `ttl`     BIGINT(20)  NULL
  * );
+ *
+ * ALTER TABLE `user_center`.`token`
+ * CHANGE COLUMN `user_id` `user_id` BIGINT(20) NOT NULL ,
+ * ADD PRIMARY KEY (`user_id`);
  **/
 class Token extends Model
 {
@@ -42,7 +46,7 @@ class Token extends Model
      *
      * @var array
      */
-    protected $fillable = [];
+    protected $fillable = ["user_id", "token", "ttl"];
 
     /**
      * The attributes excluded from the model's JSON form.
