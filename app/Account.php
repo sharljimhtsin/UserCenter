@@ -51,9 +51,14 @@ class Account extends Model implements AuthenticatableContract, AuthorizableCont
     // account login type
     const TEMP_LOGIN = -1;
     const NORMAL_LOGIN = 0;
-    const QQ_LOGIN = 1;
-    const WECHAT_LOGIN = 2;
-    const WEIBO_LOGIN = 3;
+    const TELEPHONE_LOGIN = 1;
+    const QQ_LOGIN = 2;
+    const WECHAT_LOGIN = 3;
+    const WEIBO_LOGIN = 4;
+
+    // account status type
+    const NORMAL_STATUS = 1;
+    const BAN_STATUS = 2;
 
 
     /**
@@ -61,7 +66,14 @@ class Account extends Model implements AuthenticatableContract, AuthorizableCont
      *
      * @var array
      */
-    protected $fillable = ['account_id', 'user_key', 'password', 'account_type', 'union_user_id', 'status'];
+    protected $fillable = ['user_key', 'password', 'account_type', 'union_user_id', 'status'];
+
+    /**
+     * The attributes that aren't mass assignable.
+     *
+     * @var array
+     */
+    protected $guarded = ['account_id'];
 
     /**
      * The attributes excluded from the model's JSON form.

@@ -43,7 +43,14 @@ class SmsCode extends Model
      *
      * @var array
      */
-    protected $fillable = [];
+    protected $fillable = ["telephone", "code", "ttl"];
+
+    /**
+     * The attributes that aren't mass assignable.
+     *
+     * @var array
+     */
+    protected $guarded = [];
 
     /**
      * The attributes excluded from the model's JSON form.

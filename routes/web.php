@@ -31,6 +31,8 @@ $router->group(['prefix' => 'account', 'middleware' => []], function () use ($ro
     $router->post('index', 'AccountController@index');
     $router->post('login', 'AccountController@login');
     $router->post('tempLogin', 'AccountController@tempLogin');
+    $router->post('sendSmsCode', 'AccountController@sendSmsCode');
+    $router->post('bindPhone', 'AccountController@bindPhone');
     $router->post('info', 'AccountController@info');
     $router->get("/", function () use ($router) {
         return "/";
