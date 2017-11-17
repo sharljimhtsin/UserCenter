@@ -23,7 +23,7 @@ class AccountController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('token', ['only' => ["index", "sendSmsCode", "bindPhone"]]);
+        $this->middleware("token", ["only" => ["index", "sendSmsCode", "bindPhone"]]);
     }
 
     public function index(Request $request)
@@ -51,7 +51,7 @@ class AccountController extends Controller
     {
         $user_key = $request->input("user_key", "qwerty");
         $password = $request->input("password", "123456");
-        $result = Account::query()->where([['user_key', '=', $user_key], ['password', '=', md5($password)]])->first();
+        $result = Account::query()->where([["user_key", "=", $user_key], ["password", "=", md5($password)], ["account_type", "=", Account::NORMAL_LOGIN], ["status", "=", Account::NORMAL_STATUS]])->first();
         if ($result) {
             $accountObj = $result->toArray();
             $userResult = User::query()->find($accountObj["union_user_id"]);
@@ -80,7 +80,7 @@ class AccountController extends Controller
         if ($smsCode != $smsCodeObject["code"] || time() > $smsCodeObject["ttl"]) {
             return response()->json(["error" => "smsCode invalid"]);
         }
-        $accountResult = Account::query()->where([["user_key", "=", $telephone], ["account_type", "=", Account::TELEPHONE_LOGIN]])->first();
+        $accountResult = Account::query()->where([["user_key", "=", $telephone], ["account_type", "=", Account::TELEPHONE_LOGIN], ["status", "=", Account::NORMAL_STATUS]])->first();
         if (is_null($accountResult)) {
             return response()->json(["error" => "account not exist"]);
         }
@@ -102,7 +102,7 @@ class AccountController extends Controller
     public function tempLogin(Request $request)
     {
         $user_key = $request->input("device_id", "qwerty");
-        $result = Account::query()->firstOrNew(['user_key' => $user_key], ["account_type" => Account::TEMP_LOGIN]);
+        $result = Account::query()->firstOrNew(["user_key" => $user_key, "account_type" => Account::TEMP_LOGIN, "status" => Account::NORMAL_STATUS], []);
         $accountObj = $result->toArray();
         if (!array_key_exists("union_user_id", $accountObj)) {
             $accountObj["union_user_id"] = $this->genUserUid();
@@ -170,6 +170,8 @@ class AccountController extends Controller
                 $userObj["telephone"] = $telephone;
                 $userResult->fill($userObj)->save();
                 $accountResult = Account::query()->create(["user_key" => $telephone, "account_type" => Account::TELEPHONE_LOGIN, "union_user_id" => $user_id, "status" => Account::NORMAL_STATUS]);
+                // once telephone bind-ed,disable quick login of it
+                Account::query()->where([["union_user_id", "=", $user_id], ["account_type", "=", Account::TEMP_LOGIN]])->update(["status" => Account::DISABLE_STATUS]);
                 return response()->json(["account" => $accountResult->toArray()]);
             } else {
                 return response()->json(["error" => "telephone error"]);

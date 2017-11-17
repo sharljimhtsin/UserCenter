@@ -59,6 +59,7 @@ class Account extends Model implements AuthenticatableContract, AuthorizableCont
     // account status type
     const NORMAL_STATUS = 1;
     const BAN_STATUS = 2;
+    const DISABLE_STATUS = 3;
 
 
     /**
