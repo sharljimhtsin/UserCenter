@@ -19,7 +19,7 @@ use Illuminate\Database\Eloquent\Model;
  * PRIMARY KEY (`telephone`)
  * );
  **/
-class SmsCode extends Model
+class SmsCode extends Model implements MultiDB
 {
     public $table = 'sms_code';
 
@@ -58,4 +58,19 @@ class SmsCode extends Model
      * @var array
      */
     protected $hidden = [];
+
+    static $dbPool = array();
+
+    static function getQuery($db = "mysql")
+    {
+        if (array_key_exists($db, SmsCode::$dbPool)) {
+            return SmsCode::$dbPool[$db];
+        } else {
+            $model = new SmsCode();
+            $model->setConnection($db);
+            $builder = $model->newQuery();
+            SmsCode::$dbPool[$db] = $builder;
+            return $builder;
+        }
+    }
 }

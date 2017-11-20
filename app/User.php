@@ -25,7 +25,7 @@ use Illuminate\Database\Eloquent\Model;
  * PRIMARY KEY (`user_id`)
  * );
  **/
-class User extends Model implements AuthenticatableContract, AuthorizableContract
+class User extends Model implements AuthenticatableContract, AuthorizableContract, MultiDB
 {
     use Authenticatable, Authorizable;
 
@@ -68,4 +68,19 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      * @var array
      */
     protected $hidden = [];
+
+    static $dbPool = array();
+
+    static function getQuery($db = "mysql")
+    {
+        if (array_key_exists($db, User::$dbPool)) {
+            return User::$dbPool[$db];
+        } else {
+            $model = new User();
+            $model->setConnection($db);
+            $builder = $model->newQuery();
+            User::$dbPool[$db] = $builder;
+            return $builder;
+        }
+    }
 }

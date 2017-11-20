@@ -22,7 +22,7 @@ use Illuminate\Database\Eloquent\Model;
  * CHANGE COLUMN `user_id` `user_id` BIGINT(20) NOT NULL ,
  * ADD PRIMARY KEY (`user_id`);
  **/
-class Token extends Model
+class Token extends Model implements MultiDB
 {
     public $table = 'token';
 
@@ -54,4 +54,19 @@ class Token extends Model
      * @var array
      */
     protected $hidden = [];
+
+    static $dbPool = array();
+
+    static function getQuery($db = "mysql")
+    {
+        if (array_key_exists($db, Token::$dbPool)) {
+            return Token::$dbPool[$db];
+        } else {
+            $model = new Token();
+            $model->setConnection($db);
+            $builder = $model->newQuery();
+            Token::$dbPool[$db] = $builder;
+            return $builder;
+        }
+    }
 }

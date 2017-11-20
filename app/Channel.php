@@ -23,7 +23,7 @@ use Illuminate\Database\Eloquent\Model;
  * PRIMARY KEY (`channel_id`)
  * );
  **/
-class Channel extends Model
+class Channel extends Model implements MultiDB
 {
     public $table = 'channel';
 
@@ -55,4 +55,19 @@ class Channel extends Model
      * @var array
      */
     protected $hidden = [];
+
+    static $dbPool = array();
+
+    static function getQuery($db = "mysql")
+    {
+        if (array_key_exists($db, Channel::$dbPool)) {
+            return Channel::$dbPool[$db];
+        } else {
+            $model = new Channel();
+            $model->setConnection($db);
+            $builder = $model->newQuery();
+            Channel::$dbPool[$db] = $builder;
+            return $builder;
+        }
+    }
 }

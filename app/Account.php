@@ -28,7 +28,7 @@ use Illuminate\Database\Eloquent\Model;
  * ALTER TABLE `user_center`.`account`
  * CHANGE COLUMN `account_id` `account_id` BIGINT(20) NOT NULL AUTO_INCREMENT ;
  **/
-class Account extends Model implements AuthenticatableContract, AuthorizableContract
+class Account extends Model implements AuthenticatableContract, AuthorizableContract, MultiDB
 {
     use Authenticatable, Authorizable;
 
@@ -84,4 +84,19 @@ class Account extends Model implements AuthenticatableContract, AuthorizableCont
     protected $hidden = [
         'password',
     ];
+
+    static $dbPool = array();
+
+    static function getQuery($db = "mysql")
+    {
+        if (array_key_exists($db, Account::$dbPool)) {
+            return Account::$dbPool[$db];
+        } else {
+            $model = new Account();
+            $model->setConnection($db);
+            $builder = $model->newQuery();
+            Account::$dbPool[$db] = $builder;
+            return $builder;
+        }
+    }
 }

@@ -187,7 +187,7 @@ class AccountController extends Controller
     {
         $user_key = $request->input("user_key", "qwerty");
         $password = $request->input("password", "123456");
-        $result = Account::query()->where([["user_key", "=", $user_key], ["account_type", "=", Account::NORMAL_LOGIN], ["status", "=", Account::NORMAL_STATUS]])->first();
+        $result = Account::getQuery()->where([["user_key", "=", $user_key], ["account_type", "=", Account::NORMAL_LOGIN], ["status", "=", Account::NORMAL_STATUS]])->first();
         if ($result) {
             return response()->json(["error" => "account exist"]);
         } else {

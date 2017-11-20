@@ -21,7 +21,7 @@ use Illuminate\Database\Eloquent\Model;
  * PRIMARY KEY (`mapping_id`)
  * );
  **/
-class Mapping extends Model
+class Mapping extends Model implements MultiDB
 {
     public $table = 'mapping';
 
@@ -53,4 +53,19 @@ class Mapping extends Model
      * @var array
      */
     protected $hidden = [];
+
+    static $dbPool = array();
+
+    static function getQuery($db = "mysql")
+    {
+        if (array_key_exists($db, Mapping::$dbPool)) {
+            return Mapping::$dbPool[$db];
+        } else {
+            $model = new Mapping();
+            $model->setConnection($db);
+            $builder = $model->newQuery();
+            Mapping::$dbPool[$db] = $builder;
+            return $builder;
+        }
+    }
 }
