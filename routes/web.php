@@ -25,8 +25,8 @@ $router->group(['prefix' => 'user', 'middleware' => []], function () use ($route
     $router->post('index', 'UserController@index');
     $router->post('info', 'UserController@info');
     $router->post('updateInfo', 'UserController@updateInfo');
-    $router->get("/", function () use ($router) {
-        return "/";
+    $router->get("/{foobar}", function ($foobar) use ($router) {
+        return "/" . $foobar;
     });
 });
 
@@ -42,7 +42,7 @@ $router->group(['prefix' => 'account', 'middleware' => []], function () use ($ro
     $router->post('modifyPassword', 'AccountController@modifyPassword');
     $router->post('resetPassword', 'AccountController@resetPassword');
     $router->post('info', 'AccountController@info');
-    $router->get("/", function () use ($router) {
-        return "/";
+    $router->get("/{foobar}", function ($foobar) use ($router) {
+        return "/" . $foobar;
     });
 });
