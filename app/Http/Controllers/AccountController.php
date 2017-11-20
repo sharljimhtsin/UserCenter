@@ -113,6 +113,8 @@ class AccountController extends Controller
         $userObj = $userResult->toArray();
         if (empty($userObj)) {
             $userObj["user_id"] = $accountObj["union_user_id"];
+            $userObj["role"] = User::NORMAL_ROLE;
+            $userObj["status"] = User::NORMAL_STATUS;
             $userResult->fill($userObj);
             $userResult->save();
         }
@@ -181,9 +183,23 @@ class AccountController extends Controller
         }
     }
 
-    public function XXX(Request $request)
+    public function register(Request $request)
     {
-
+        $user_key = $request->input("user_key", "qwerty");
+        $password = $request->input("password", "123456");
+        $result = Account::query()->where([["user_key", "=", $user_key], ["account_type", "=", Account::NORMAL_LOGIN], ["status", "=", Account::NORMAL_STATUS]])->first();
+        if ($result) {
+            return response()->json(["error" => "account exist"]);
+        } else {
+            $user_id = $this->genUserUid();
+            $accountResult = Account::query()->create(["user_key" => $user_key, "password" => md5($password), "account_type" => Account::NORMAL_LOGIN, "union_user_id" => $user_id, "status" => Account::NORMAL_STATUS]);
+            $accountObj = $accountResult->toArray();
+            $userResult = User::query()->create(["user_id" => $user_id, "status" => User::NORMAL_STATUS, "role" => User::NORMAL_ROLE]);
+            $userObj = $userResult->toArray();
+            $tokenStr = $this->getRandomToken();
+            Token::query()->updateOrCreate(["user_id" => $userObj["user_id"]], ["user_id" => $userObj["user_id"], "token" => $tokenStr, "ttl" => $this->getTokenTTLTime()]);
+            return response()->json(["token" => $tokenStr, "account" => $accountObj, "user" => $userObj]);
+        }
     }
 
     public function modifyPassword(Request $request)

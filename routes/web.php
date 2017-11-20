@@ -35,6 +35,7 @@ $router->group(['prefix' => 'account', 'middleware' => []], function () use ($ro
     $router->post('sendSmsCodeNoToken', 'AccountController@sendSmsCodeNoToken');
     $router->post('sendSmsCode', 'AccountController@sendSmsCode');
     $router->post('bindPhone', 'AccountController@bindPhone');
+    $router->post('register', 'AccountController@register');
     $router->post('modifyPassword', 'AccountController@modifyPassword');
     $router->post('resetPassword', 'AccountController@resetPassword');
     $router->post('info', 'AccountController@info');

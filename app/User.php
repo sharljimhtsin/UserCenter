@@ -45,6 +45,13 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
 
     const CREATED_AT = 'create_time';
     const UPDATED_AT = 'modify_time';
+    // role type
+    const NORMAL_ROLE = 1;
+    const ADMIN_ROLE = 2;
+    // account status type
+    const NORMAL_STATUS = 1;
+    const BAN_STATUS = 2;
+    const DISABLE_STATUS = 3;
 
     /**
      * The attributes that are mass assignable.
