@@ -21,10 +21,13 @@ $router->get('/', function () use ($router) {
 
 $router->get('/demo', ['uses' => 'ExampleController@demo']);
 
-$router->group(['prefix' => 'user', 'middleware' => ['user']], function () use ($router) {
-    $router->get('index', 'UserController@index');
-    $router->get('login', 'UserController@login');
-    $router->get('info', 'UserController@info');
+$router->group(['prefix' => 'user', 'middleware' => []], function () use ($router) {
+    $router->post('index', 'UserController@index');
+    $router->post('info', 'UserController@info');
+    $router->post('updateInfo', 'UserController@updateInfo');
+    $router->get("/", function () use ($router) {
+        return "/";
+    });
 });
 
 $router->group(['prefix' => 'account', 'middleware' => []], function () use ($router) {

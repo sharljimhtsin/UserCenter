@@ -20,7 +20,7 @@ class UserController extends Controller
      */
     public function __construct()
     {
-        $this->middleware("user", ['except' => ['login']]);
+        $this->middleware("token", ['except' => ['index']]);
     }
 
     public function index(Request $request)
@@ -28,20 +28,37 @@ class UserController extends Controller
         return "user";
     }
 
-    public function login(Request $request)
+    public function updateInfo(Request $request)
     {
-        $userList = User::all();
-        var_dump($userList);
-
-        return response()->json(["aaa" => "bb"]);
+        $user_id = $request->input("user_id");
+        $nickname = $request->input("nickname");
+        $avatar = $request->input("avatar");
+        $birthday = $request->input("birthday");
+        $sex = $request->input("sex");
+        $signature = $request->input("signature");
+        $result = User::getQuery()->find($user_id);
+        if (is_null($result)) {
+            return response()->json(["error" => "user not exist"]);
+        } else {
+            $obj = $result->toArray();
+            $obj["nickname"] = $nickname;
+            $obj["avatar"] = $avatar;
+            $obj["birthday"] = $birthday;
+            $obj["sex"] = $sex;
+            $obj["signature"] = $signature;
+            $result->fill($obj)->save();
+            return response()->json(["user" => $obj]);
+        }
     }
 
     public function info(Request $request)
     {
-        $flight = User::query()->where("username", "=", "rinimabi")->first();
-        $flight->ip = "2222222";
-        $flight->save();
-//        var_dump($flight);
-        return "";
+        $user_id = $request->input("user_id");
+        $result = User::getQuery()->find($user_id);
+        if (is_null($result)) {
+            return response()->json(["error" => "user not exist"]);
+        } else {
+            return response()->json(["user" => $result->toArray()]);
+        }
     }
 }
