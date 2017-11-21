@@ -23,11 +23,19 @@ class UserController extends Controller
         $this->middleware("token", ['except' => ['index']]);
     }
 
+    /**
+     * @param Request $request
+     * @return string
+     */
     public function index(Request $request)
     {
         return "user";
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function updateInfo(Request $request)
     {
         $user_id = $request->input("user_id");
@@ -51,6 +59,10 @@ class UserController extends Controller
         }
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function info(Request $request)
     {
         $user_id = $request->input("user_id");

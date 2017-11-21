@@ -26,6 +26,10 @@ class AccountController extends Controller
         $this->middleware("token", ["only" => ["index", "sendSmsCode", "bindPhone", "modifyPassword"]]);
     }
 
+    /**
+     * @param Request $request
+     * @return string
+     */
     public function index(Request $request)
     {
         return "OK";
@@ -47,6 +51,10 @@ class AccountController extends Controller
         return $prefix . $uuid;
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function login(Request $request)
     {
         $user_key = $request->input("user_key", "qwerty");
@@ -68,6 +76,10 @@ class AccountController extends Controller
         }
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function telephoneLogin(Request $request)
     {
         $telephone = $request->input("telephone", "13800138000");
@@ -99,6 +111,10 @@ class AccountController extends Controller
         }
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function tempLogin(Request $request)
     {
         $user_key = $request->input("device_id", "qwerty");
@@ -123,6 +139,10 @@ class AccountController extends Controller
         return response()->json(["token" => $tokenStr, "account" => $accountObj, "user" => $userObj]);
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function sendSmsCode(Request $request)
     {
         $telephone = $request->input("telephone", "13800138000");
@@ -143,6 +163,10 @@ class AccountController extends Controller
         }
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function sendSmsCodeNoToken(Request $request)
     {
         $telephone = $request->input("telephone", "13800138000");
@@ -151,6 +175,10 @@ class AccountController extends Controller
         return response()->json(["smsCode" => $smsCodeStr]);
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function bindPhone(Request $request)
     {
         $telephone = $request->input("telephone", "13800138000");
@@ -183,6 +211,10 @@ class AccountController extends Controller
         }
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function register(Request $request)
     {
         $user_key = $request->input("user_key", "qwerty");
@@ -202,6 +234,10 @@ class AccountController extends Controller
         }
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function modifyPassword(Request $request)
     {
         $user_id = $request->input("user_id", "0000");
@@ -221,6 +257,10 @@ class AccountController extends Controller
         }
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function resetPassword(Request $request)
     {
         $telephone = $request->input("telephone", "13800138000");

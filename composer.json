@@ -9,7 +9,10 @@
         "laravel/lumen-framework": "5.5.*",
         "vlucas/phpdotenv": "~2.2",
         "barryvdh/laravel-ide-helper": "^2.4",
-        "doctrine/dbal": "^2.6"
+        "doctrine/dbal": "^2.6",
+        "symfony/console": "^3.3",
+        "apigen/apigen": "dev-master",
+        "roave/better-reflection": "dev-master#c87d856"
     },
     "require-dev": {
         "fzaninotto/faker": "~1.4",
