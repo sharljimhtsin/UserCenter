@@ -46,3 +46,10 @@ $router->group(['prefix' => 'account', 'middleware' => []], function () use ($ro
         return "/" . $foobar;
     });
 });
+
+$router->group(['prefix' => 'admin', 'middleware' => ['token', 'auth:admin']], function () use ($router) {
+    $router->post('index', 'AdminController@index');
+    $router->get("/{foobar}", function ($foobar) use ($router) {
+        return "/" . $foobar;
+    });
+});
