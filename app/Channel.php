@@ -22,6 +22,15 @@ use Illuminate\Database\Eloquent\Model;
  * `is_test`          TINYINT(5)   NULL,
  * PRIMARY KEY (`channel_id`)
  * );
+ *
+ * ALTER TABLE `user_center`.`channel`
+ * ADD COLUMN `owner` BIGINT(20) NULL AFTER `is_test`;
+ *
+ * ALTER TABLE `user_center`.`channel`
+ * CHANGE COLUMN `channel_id` `channel_id` BIGINT(20) NOT NULL AUTO_INCREMENT ;
+ *
+ * ALTER TABLE `user_center`.`channel`
+ * ADD COLUMN `modify_time` DATETIME NULL AFTER `owner`;
  **/
 class Channel extends Model implements MultiDB
 {
@@ -33,9 +42,9 @@ class Channel extends Model implements MultiDB
 
     public $keyType = 'int';
 
-    public $timestamps = false;
+    public $timestamps = true;
 
-    public $dateFormat = 'U';
+    public $dateFormat = 'Y-m-d H:i:s';
 
     public $connection = 'mysql';
 
@@ -47,7 +56,7 @@ class Channel extends Model implements MultiDB
      *
      * @var array
      */
-    protected $fillable = [];
+    protected $fillable = ['channel_name', 'channel_key', 'channel_secret', 'pay_callback_url', 'is_test', 'owner'];
 
     /**
      * The attributes excluded from the model's JSON form.

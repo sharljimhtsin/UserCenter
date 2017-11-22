@@ -56,6 +56,10 @@ $router->group(['prefix' => 'admin', 'middleware' => ['token', 'admin']], functi
 
 $router->group(['prefix' => 'channel', 'middleware' => ['token', 'partner']], function () use ($router) {
     $router->post('index', 'ChannelController@index');
+    $router->post('add', 'ChannelController@add');
+    $router->post('update', 'ChannelController@update');
+    $router->post('delete', 'ChannelController@delete');
+    $router->post('all', 'ChannelController@all');
     $router->get("/{foobar}", function ($foobar) use ($router) {
         return "/" . $foobar;
     });
