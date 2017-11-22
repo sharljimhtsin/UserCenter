@@ -20,6 +20,10 @@ use Illuminate\Database\Eloquent\Model;
  * `create_time` DATETIME    NULL,
  * PRIMARY KEY (`mapping_id`)
  * );
+ *
+ * ALTER TABLE `user_center`.`mapping`
+ * CHANGE COLUMN `mapping_id` `mapping_id` BIGINT(20) NOT NULL AUTO_INCREMENT ,
+ * ADD COLUMN `modify_time` DATETIME NULL AFTER `create_time`;
  **/
 class Mapping extends Model implements MultiDB
 {
@@ -31,9 +35,9 @@ class Mapping extends Model implements MultiDB
 
     public $keyType = 'int';
 
-    public $timestamps = false;
+    public $timestamps = true;
 
-    public $dateFormat = 'U';
+    public $dateFormat = 'Y-m-d H:i:s';
 
     public $connection = 'mysql';
 
@@ -45,7 +49,7 @@ class Mapping extends Model implements MultiDB
      *
      * @var array
      */
-    protected $fillable = [];
+    protected $fillable = ['channel_id', 'channel_uid', 'user_id'];
 
     /**
      * The attributes excluded from the model's JSON form.

@@ -10,6 +10,8 @@ namespace App\Http\Controllers;
 
 
 use App\Account;
+use App\Channel;
+use App\Mapping;
 use App\SmsCode;
 use App\Token;
 use App\User;
@@ -280,6 +282,29 @@ class AccountController extends Controller
         } else {
             return response()->json(["error" => "account not exist"]);
         }
+    }
+
+    public function attach(Request $request)
+    {
+        $user_id = $request->input("user_id", "0000");
+        $cp_user_id = $request->input("cp_user_id", "0000");
+        $cp_id = $request->input("cp_id", "0000");
+        $sign = $request->input("sign", "0000");
+        $user = $request->user();
+        if (is_null($user)) {
+            return response()->json(["error" => "user not exist"]);
+        }
+        $channelResult = Channel::getQuery()->find($cp_id);
+        if (is_null($channelResult)) {
+            return response()->json(["error" => "channel not exist"]);
+        }
+        $channelObj = $channelResult->toArray();
+        $signStr = md5($user_id . $cp_user_id . $cp_id . $channelObj["channel_secret"]);
+        if ($signStr != $sign) {
+            return response()->json(["error" => "sign not match"]);
+        }
+        $mappingResult = Mapping::getQuery($channelObj["alias"])->updateOrCreate(["channel_id" => $cp_id, "channel_uid" => $cp_user_id, "user_id" => $user_id], ["channel_id" => $cp_id, "channel_uid" => $cp_user_id, "user_id" => $user_id]);
+        return response()->json(["mapping" => $mappingResult->toArray()]);
     }
 
     private function genUserUid()

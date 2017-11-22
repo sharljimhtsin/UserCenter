@@ -31,6 +31,9 @@ use Illuminate\Database\Eloquent\Model;
  *
  * ALTER TABLE `user_center`.`channel`
  * ADD COLUMN `modify_time` DATETIME NULL AFTER `owner`;
+ *
+ * ALTER TABLE `user_center`.`channel`
+ * ADD COLUMN `alias` VARCHAR(20) NULL AFTER `modify_time`;
  **/
 class Channel extends Model implements MultiDB
 {
@@ -56,7 +59,7 @@ class Channel extends Model implements MultiDB
      *
      * @var array
      */
-    protected $fillable = ['channel_name', 'channel_key', 'channel_secret', 'pay_callback_url', 'is_test', 'owner'];
+    protected $fillable = ['channel_name', 'channel_key', 'channel_secret', 'pay_callback_url', 'is_test', 'owner', 'alias'];
 
     /**
      * The attributes excluded from the model's JSON form.

@@ -66,16 +66,17 @@ class ChannelController extends Controller
         $user_id = $request->input("user_id");
         $channel_name = $request->input("channel_name");
         $pay_callback_url = $request->input("pay_callback_url");
-        if (is_null($channel_name) || is_null($pay_callback_url)) {
+        $alias = $request->input("alias", "mysql");
+        if (is_null($channel_name) || is_null($pay_callback_url) || is_null($alias)) {
             return response()->json(["error" => "param error"]);
         }
-        $result = Channel::getQuery()->where([["channel_name", "=", $channel_name], ["owner", "=", $user_id]])->first();
+        $result = Channel::getQuery()->where([["channel_name", "=", $channel_name], ["owner", "=", $user_id]])->orWhere("alias", "=", $alias)->first();
         if ($result) {
             return response()->json(["error" => "channel exist"]);
         } else {
             $channel_key = $this->getUniqueStr("K");
             $channel_secret = $this->getUniqueStr("S");
-            $addResult = Channel::getQuery()->create(["channel_name" => $channel_name, "channel_key" => $channel_key, "channel_secret" => $channel_secret, "pay_callback_url" => $pay_callback_url, "is_test" => 1, "owner" => $user_id]);
+            $addResult = Channel::getQuery()->create(["channel_name" => $channel_name, "channel_key" => $channel_key, "channel_secret" => $channel_secret, "pay_callback_url" => $pay_callback_url, "is_test" => 1, "owner" => $user_id, "alias" => $alias]);
             return response()->json(["channel" => $addResult->toArray()]);
         }
     }

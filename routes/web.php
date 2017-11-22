@@ -42,6 +42,7 @@ $router->group(['prefix' => 'account', 'middleware' => []], function () use ($ro
     $router->post('modifyPassword', 'AccountController@modifyPassword');
     $router->post('resetPassword', 'AccountController@resetPassword');
     $router->post('info', 'AccountController@info');
+    $router->post('attach', 'AccountController@attach');
     $router->get("/{foobar}", function ($foobar) use ($router) {
         return "/" . $foobar;
     });
