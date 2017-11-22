@@ -50,6 +50,10 @@ $router->group(['prefix' => 'account', 'middleware' => []], function () use ($ro
 
 $router->group(['prefix' => 'admin', 'middleware' => ['token', 'admin']], function () use ($router) {
     $router->post('index', 'AdminController@index');
+    $router->post('channelList', 'AdminController@channelList');
+    $router->post('userList', 'AdminController@userList');
+    $router->post('accountList', 'AdminController@accountList');
+    $router->post('approveChannel', 'AdminController@approveChannel');
     $router->get("/{foobar}", function ($foobar) use ($router) {
         return "/" . $foobar;
     });
