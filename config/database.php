@@ -8,9 +8,12 @@
 
 namespace App\config;
 
-
+/**
+ * @see https://github.com/laravel/lumen-framework/blob/5.5/config/database.php
+ */
 return [
-    'default' => 'mysql',
+    'fetch' => \PDO::FETCH_CLASS,
+    'default' => env('DB_CONNECTION', 'mysql'),
     'connections' => [
         'mysql' => [
             'driver' => 'mysql',

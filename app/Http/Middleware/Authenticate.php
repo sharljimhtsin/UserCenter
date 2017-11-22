@@ -37,7 +37,7 @@ class Authenticate
     {
         $userObj = User::getQuery()->find($request->input("user_id"))->toArray();
         if ($userObj["role"] != User::ADMIN_ROLE) {
-            return response('Unauthorized.', 401);
+            return response()->json(["error" => "Unauthorized"])->setStatusCode(401);
         }
         return $next($request);
     }
