@@ -43,15 +43,18 @@ DROP TABLE IF EXISTS `channel`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `channel` (
-  `channel_id` bigint(20) NOT NULL,
+  `channel_id` bigint(20) NOT NULL AUTO_INCREMENT,
   `channel_name` varchar(45) DEFAULT NULL,
   `channel_key` varchar(45) DEFAULT NULL,
   `channel_secret` varchar(45) DEFAULT NULL,
   `create_time` datetime DEFAULT NULL,
   `pay_callback_url` varchar(100) DEFAULT NULL,
   `is_test` tinyint(5) DEFAULT NULL,
+  `owner` bigint(20) DEFAULT NULL,
+  `modify_time` datetime DEFAULT NULL,
+  `alias` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`channel_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -62,13 +65,14 @@ DROP TABLE IF EXISTS `mapping`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `mapping` (
-  `mapping_id` bigint(20) NOT NULL,
+  `mapping_id` bigint(20) NOT NULL AUTO_INCREMENT,
   `channel_id` bigint(20) DEFAULT NULL,
   `channel_uid` varchar(45) DEFAULT NULL,
   `user_id` bigint(20) DEFAULT NULL,
   `create_time` datetime DEFAULT NULL,
+  `modify_time` datetime DEFAULT NULL,
   PRIMARY KEY (`mapping_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -134,4 +138,4 @@ CREATE TABLE `user` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2017-11-21 15:12:54
+-- Dump completed on 2017-11-22 16:40:20
