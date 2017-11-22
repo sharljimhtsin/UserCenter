@@ -2,8 +2,8 @@
 /**
  * Created by PhpStorm.
  * User: Administrator
- * Date: 2017/11/21
- * Time: 15:19:27
+ * Date: 2017/11/22
+ * Time: 11:00:58
  */
 
 namespace App\Http\Controllers;
@@ -11,22 +11,21 @@ namespace App\Http\Controllers;
 
 use App\User;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 
-class AdminController extends Controller
+class ChannelController extends Controller
 {
 
     /**
-     * AdminController constructor.
+     * ChannelController constructor.
      */
     public function __construct()
     {
-        $this->middleware("admin", ['except' => []]);
+        $this->middleware("partner", []);
     }
 
     /**
      * @param Request $request
-     * @return Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function index(Request $request)
     {

@@ -34,8 +34,8 @@ class AuthServiceProvider extends ServiceProvider
         $authorService = $this->app[Gate::class];
         $authService = $this->app['auth'];
         $authService->viaRequest('api', function (Request $request) {
-            if ($request->input('api_token')) {
-                return User::getQuery()->where('api_token', $request->input('api_token'))->first();
+            if ($request->input('user_id')) {
+                return User::getQuery()->where('user_id', $request->input('user_id'))->first();
             } else {
                 return null;
             }

@@ -20,16 +20,25 @@ class UserController extends Controller
      */
     public function __construct()
     {
-        $this->middleware("token", ['except' => ['index']]);
+        $this->middleware("token", ['except' => []]);
     }
 
     /**
      * @param Request $request
-     * @return string
+     * @return \Illuminate\Http\JsonResponse
      */
     public function index(Request $request)
     {
-        return "user";
+        /**
+         * @var $userResult User
+         */
+        $userResult = $request->user();
+        if (is_null($userResult)) {
+            return response()->json(["error" => "user not exist"]);
+        } else {
+            $userObj = $userResult->toArray();
+            return response()->json(["user" => $userObj]);
+        }
     }
 
     /**

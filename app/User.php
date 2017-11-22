@@ -42,6 +42,7 @@ class User extends Model implements MultiDB
     // role type
     const NORMAL_ROLE = 1;
     const ADMIN_ROLE = 2;
+    const PARTNER_ROLE = 3;
     // account status type
     const NORMAL_STATUS = 1;
     const BAN_STATUS = 2;

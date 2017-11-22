@@ -47,8 +47,15 @@ $router->group(['prefix' => 'account', 'middleware' => []], function () use ($ro
     });
 });
 
-$router->group(['prefix' => 'admin', 'middleware' => ['token', 'auth:admin']], function () use ($router) {
+$router->group(['prefix' => 'admin', 'middleware' => ['token', 'admin']], function () use ($router) {
     $router->post('index', 'AdminController@index');
+    $router->get("/{foobar}", function ($foobar) use ($router) {
+        return "/" . $foobar;
+    });
+});
+
+$router->group(['prefix' => 'channel', 'middleware' => ['token', 'partner']], function () use ($router) {
+    $router->post('index', 'ChannelController@index');
     $router->get("/{foobar}", function ($foobar) use ($router) {
         return "/" . $foobar;
     });

@@ -6,7 +6,7 @@ use App\User;
 use Closure;
 use Illuminate\Contracts\Auth\Factory as Auth;
 
-class Authenticate
+class AdminAuthenticate
 {
     /**
      * The authentication guard factory instance.
