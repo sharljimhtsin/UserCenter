@@ -55,7 +55,8 @@ class PayController extends Controller
         $product_name = $request->input("product_name", "unknown");
         $product_desc = $request->input("product_desc", "unknown");
         $notify_url = $request->input("notify_url", "");
-        if (is_null($channel_id) || is_null($channel_order_id) || is_null($money) || is_null($role_id) || is_null($product_id)) {
+        $sign = $request->input("sign", null);
+        if (is_null($channel_id) || is_null($channel_order_id) || is_null($money) || is_null($role_id) || is_null($product_id) || is_null($sign)) {
             return response()->json(["error" => "param error"]);
         }
         $channelResult = Channel::getQuery()->find($channel_id);
@@ -66,6 +67,15 @@ class PayController extends Controller
         $mappingResult = Mapping::getQuery($channelObj["alias"])->where([["channel_id", "=", $channel_id], ["channel_uid", "=", $role_id], ["user_id", "=", $user_id]])->first();
         if (is_null($mappingResult)) {
             return response()->json(["error" => "channel user not exist"]);
+        }
+        $post = $request->except(["sign"]);
+        $serverSign = $this->calcSign($post, $channelObj["channel_secret"]);
+        if ($sign != $serverSign) {
+            return response()->json(["error" => "sign not match"]);
+        }
+        $existResult = PayOrder::getQuery($channelObj["alias"])->where([["channel_id", "=", $channel_id], ["channel_order_id", "=", $channel_order_id]])->exists();
+        if ($existResult) {
+            return response()->json(["error" => "channel order id duplicated"]);
         }
         $model = PayOrder::getQuery($channelObj["alias"])->newModelInstance();
         $data = [
@@ -88,6 +98,19 @@ class PayController extends Controller
         ];
         $model->fill($data)->save();
         return response()->json(["payOrder" => $data]);
+    }
+
+    private function calcSign($post, $secretKey)
+    {
+        ksort($post);
+        $str = "";
+        foreach ($post as $k => $v) {
+            $str .= $k . "=" . $v;
+            $str .= "&";
+        }
+        $str = substr($str, 0, strlen($str) - 1);
+        $str .= $secretKey;
+        return md5($str);
     }
 
     public function pay(Request $request)
