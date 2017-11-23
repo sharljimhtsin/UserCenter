@@ -69,3 +69,13 @@ $router->group(['prefix' => 'channel', 'middleware' => ['token', 'partner']], fu
         return "/" . $foobar;
     });
 });
+
+$router->group(['prefix' => 'pay', 'middleware' => []], function () use ($router) {
+    $router->post('index', 'PayController@index');
+    $router->post('add', 'PayController@add');
+    $router->post('pay', 'PayController@pay');
+    $router->post('callback', 'PayController@callback');
+    $router->get("/{foobar}", function ($foobar) use ($router) {
+        return "/" . $foobar;
+    });
+});
