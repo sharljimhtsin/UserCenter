@@ -17,9 +17,7 @@ class UserMiddleware
 {
     public function handle(Request $request, Closure $next)
     {
-        $excludeApi = ["login"];
-        $urls = explode("/", $request->getRequestUri());
-        if (!$request->exists("token") && !in_array($urls[2], $excludeApi)) {
+        if (!$request->exists("user_id")) {
             return "error";
         }
         return $next($request);

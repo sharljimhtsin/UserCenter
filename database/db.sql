@@ -76,6 +76,37 @@ CREATE TABLE `mapping` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `pay_order`
+--
+
+DROP TABLE IF EXISTS `pay_order`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `pay_order` (
+  `order_id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `channel_id` bigint(20) NOT NULL,
+  `channel_order_id` varchar(255) DEFAULT NULL,
+  `currency` varchar(255) DEFAULT NULL,
+  `extension` varchar(255) DEFAULT NULL,
+  `money` int(11) NOT NULL,
+  `status` int(11) NOT NULL,
+  `user_id` bigint(20) NOT NULL,
+  `role_id` varchar(255) DEFAULT NULL,
+  `role_name` varchar(255) DEFAULT NULL,
+  `server_id` varchar(255) DEFAULT NULL,
+  `server_name` varchar(255) DEFAULT NULL,
+  `product_id` varchar(255) DEFAULT NULL,
+  `product_name` varchar(255) DEFAULT NULL,
+  `product_desc` varchar(255) DEFAULT NULL,
+  `notify_url` varchar(2048) DEFAULT NULL,
+  `created_time` datetime DEFAULT NULL,
+  `modify_time` datetime DEFAULT NULL,
+  `complete_time` datetime DEFAULT NULL,
+  PRIMARY KEY (`order_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `sms_code`
 --
 
@@ -138,4 +169,4 @@ CREATE TABLE `user` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2017-11-22 16:40:20
+-- Dump completed on 2017-11-23 11:09:46
