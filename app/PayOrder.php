@@ -59,6 +59,11 @@ class PayOrder extends Model
 
     const CREATED_AT = 'create_time';
     const UPDATED_AT = 'modify_time';
+    // payOrder status type
+    const STATUS_CREATE = 0;
+    const STATUS_PAYED = 1;
+    const STATUS_COMPLETED = 2;
+    const STATUS_CANCELLED = 3;
 
     /**
      * The attributes that are mass assignable.

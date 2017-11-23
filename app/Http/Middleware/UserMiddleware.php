@@ -18,7 +18,7 @@ class UserMiddleware
     public function handle(Request $request, Closure $next)
     {
         if (!$request->exists("user_id")) {
-            return "error";
+            return \response()->json(["error" => "user_id null"]);
         }
         return $next($request);
     }

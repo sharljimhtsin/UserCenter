@@ -309,7 +309,26 @@ class AccountController extends Controller
 
     private function genUserUid()
     {
-        return rand(1000, 9999);
+        $a = $this->charCodeAt("U", 0) - 96;
+        $b = time();
+        $c = rand(0, 1000);
+        return $this->leftShift($a, 32) + $this->leftShift($b, 24) + $c;
+    }
+
+    private function leftShift($a, $b)
+    {
+        return pow(2, $b) * $a;
+    }
+
+    private function charCodeAt($str, $index)
+    {
+        $char = mb_substr($str, $index, 1, 'UTF-8');
+        if (mb_check_encoding($char, 'UTF-8')) {
+            $ret = mb_convert_encoding($char, 'UTF-32BE', 'UTF-8');
+            return hexdec(bin2hex($ret));
+        } else {
+            return null;
+        }
     }
 
     private function genRandomSmsCode()

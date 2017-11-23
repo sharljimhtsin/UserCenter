@@ -11,6 +11,7 @@ namespace App\Http\Controllers;
 
 use App\Account;
 use App\Channel;
+use App\PayOrder;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -85,6 +86,22 @@ class AdminController extends Controller
         $page = $request->input("page", 1);
         $limit = $request->input("limit", 20);
         $result = Account::getQuery()->get()->forPage($page, $limit);
+        if (is_null($result)) {
+            return response()->json(["error" => "no data"]);
+        } else {
+            return response()->json(["list" => $result->toArray()]);
+        }
+    }
+
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function payOrderList(Request $request)
+    {
+        $page = $request->input("page", 1);
+        $limit = $request->input("limit", 20);
+        $result = PayOrder::getQuery()->get()->forPage($page, $limit);
         if (is_null($result)) {
             return response()->json(["error" => "no data"]);
         } else {
