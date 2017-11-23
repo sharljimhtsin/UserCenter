@@ -154,7 +154,7 @@ class PayController extends Controller
         if ($channelObj["is_test"] == 1) {
             $existObj["status"] = PayOrder::STATUS_PAYED;
             $existResult->fill($existObj)->save();
-            $this->notifyChannel($existObj);
+            $this->notifyChannel($existObj, $channelObj);
             return response()->json(["msg" => "ok due to sandbox"]);
         } else {
             //TODO alipay wechat etc
@@ -162,9 +162,35 @@ class PayController extends Controller
         }
     }
 
-    private function notifyChannel($obj)
+    private function doRequest($url, $post, $isPost = 1)
     {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_POST, $isPost);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($post));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+        $response = curl_exec($ch);
+        curl_close($ch);
+        return $response;
+    }
 
+    private function notifyChannel($orderObj, $channelObj)
+    {
+        $url = $channelObj["pay_callback_url"];
+        $channel_secret = $channelObj["channel_secret"];
+        $alias = $channelObj["alias"];
+        $sign = $this->calcSign($orderObj, $channel_secret);
+        $orderObj["sign"] = $sign;
+        $response = $this->doRequest($url, $orderObj, 1);
+        if ("OK" == $response) {
+            PayOrder::getQuery($alias)->find($orderObj["order_id"])->update(["status" => PayOrder::STATUS_COMPLETED]);
+            return true;
+        } else {
+            //LOG
+            return false;
+        }
     }
 
     public function callback(Request $request)
