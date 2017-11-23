@@ -40,6 +40,12 @@ use Illuminate\Database\Eloquent\Model;
  *
  * ALTER TABLE `user_center`.`pay_order`
  * CHANGE COLUMN `order_id` `order_id` BIGINT(20) NOT NULL AUTO_INCREMENT ;
+ *
+ * ALTER TABLE `user_center`.`pay_order`
+ * ADD COLUMN `order_no` VARCHAR(45) NULL AFTER `complete_time`;
+ *
+ * ALTER TABLE `user_center`.`pay_order`
+ * CHANGE COLUMN `created_time` `create_time` DATETIME NULL DEFAULT NULL ;
  */
 class PayOrder extends Model
 {
@@ -70,7 +76,7 @@ class PayOrder extends Model
      *
      * @var array
      */
-    protected $fillable = ['channel_id', 'channel_order_id', 'currency', 'extension', 'money', 'status', 'user_id', 'role_id', 'role_name', 'server_id', 'server_name', 'product_id', 'product_name', 'product_desc', 'notify_url', 'complete_time'];
+    protected $fillable = ['order_no', 'channel_id', 'channel_order_id', 'currency', 'extension', 'money', 'status', 'user_id', 'role_id', 'role_name', 'server_id', 'server_name', 'product_id', 'product_name', 'product_desc', 'notify_url', 'complete_time'];
 
     /**
      * The attributes excluded from the model's JSON form.

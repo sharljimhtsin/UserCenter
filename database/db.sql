@@ -32,7 +32,7 @@ CREATE TABLE `account` (
   `union_user_id` bigint(20) DEFAULT NULL,
   `status` tinyint(5) DEFAULT NULL,
   PRIMARY KEY (`account_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -99,11 +99,12 @@ CREATE TABLE `pay_order` (
   `product_name` varchar(255) DEFAULT NULL,
   `product_desc` varchar(255) DEFAULT NULL,
   `notify_url` varchar(2048) DEFAULT NULL,
-  `created_time` datetime DEFAULT NULL,
+  `create_time` datetime DEFAULT NULL,
   `modify_time` datetime DEFAULT NULL,
   `complete_time` datetime DEFAULT NULL,
+  `order_no` varchar(45) DEFAULT NULL,
   PRIMARY KEY (`order_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -169,4 +170,4 @@ CREATE TABLE `user` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2017-11-23 11:09:46
+-- Dump completed on 2017-11-23 15:14:44

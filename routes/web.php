@@ -53,6 +53,7 @@ $router->group(['prefix' => 'admin', 'middleware' => ['token', 'admin']], functi
     $router->post('channelList', 'AdminController@channelList');
     $router->post('userList', 'AdminController@userList');
     $router->post('accountList', 'AdminController@accountList');
+    $router->post('payOrderList', 'AdminController@payOrderList');
     $router->post('approveChannel', 'AdminController@approveChannel');
     $router->get("/{foobar}", function ($foobar) use ($router) {
         return "/" . $foobar;
