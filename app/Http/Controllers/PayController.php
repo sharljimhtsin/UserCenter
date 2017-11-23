@@ -115,6 +115,55 @@ class PayController extends Controller
 
     public function pay(Request $request)
     {
+        $user = $request->user();
+        if (is_null($user)) {
+            return response()->json(["error" => "user_id error"]);
+        }
+        $user_id = $request->input("user_id");
+        $order_no = $request->input("order_no");
+        $channel_id = $request->input("channel_id");
+        $channel_order_id = $request->input("channel_order_id");
+        $role_id = $request->input("role_id");
+        $product_id = $request->input("product_id");
+        $sign = $request->input("sign", null);
+        if (is_null($channel_id) || is_null($channel_order_id) || is_null($order_no) || is_null($role_id) || is_null($product_id) || is_null($sign)) {
+            return response()->json(["error" => "param error"]);
+        }
+        $channelResult = Channel::getQuery()->find($channel_id);
+        if (is_null($channelResult)) {
+            return response()->json(["error" => "channel not exist"]);
+        }
+        $channelObj = $channelResult->toArray();
+        $mappingResult = Mapping::getQuery($channelObj["alias"])->where([["channel_id", "=", $channel_id], ["channel_uid", "=", $role_id], ["user_id", "=", $user_id]])->first();
+        if (is_null($mappingResult)) {
+            return response()->json(["error" => "channel user not exist"]);
+        }
+        $post = $request->except(["sign"]);
+        $serverSign = $this->calcSign($post, $channelObj["channel_secret"]);
+        if ($sign != $serverSign) {
+            return response()->json(["error" => "sign not match"]);
+        }
+        $existResult = PayOrder::getQuery($channelObj["alias"])->where([["channel_id", "=", $channel_id], ["channel_order_id", "=", $channel_order_id], ["order_no", "=", $order_no], ["user_id", "=", $user_id]])->first();
+        if (is_null($existResult)) {
+            return response()->json(["error" => "channel order id not exist"]);
+        }
+        $existObj = $existResult->toArray();
+        if (PayOrder::STATUS_CREATE != $existObj["status"]) {
+            return response()->json(["error" => "channel order id paid yet"]);
+        }
+        if ($channelObj["is_test"] == 1) {
+            $existObj["status"] = PayOrder::STATUS_PAYED;
+            $existResult->fill($existObj)->save();
+            $this->notifyChannel($existObj);
+            return response()->json(["msg" => "ok due to sandbox"]);
+        } else {
+            //TODO alipay wechat etc
+            return redirect("http://baidu.com");
+        }
+    }
+
+    private function notifyChannel($obj)
+    {
 
     }
 
