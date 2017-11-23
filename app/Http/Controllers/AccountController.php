@@ -309,10 +309,12 @@ class AccountController extends Controller
 
     private function genUserUid()
     {
-        $a = $this->charCodeAt("U", 0) - 96;
-        $b = time();
-        $c = rand(0, 1000);
-        return $this->leftShift($a, 32) + $this->leftShift($b, 24) + $c;
+//        $r = chr(mt_rand(97, 122));
+        $r = chr(mt_rand(65, 90));
+        $a = $this->charCodeAt($r, 0) - 96;
+        $b = rand(0, 1000);
+        $c = time();
+        return abs($this->leftShift($a, 32) + $this->leftShift($b, 24) + $c);
     }
 
     private function leftShift($a, $b)
