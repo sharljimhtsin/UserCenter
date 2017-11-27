@@ -113,12 +113,17 @@ class PayController extends Controller
         return md5($str);
     }
 
+    const WECHAT = 1;
+    const ALIPAY = 2;
+    const TENPAY = 3;
+
     public function pay(Request $request)
     {
         $user = $request->user();
         if (is_null($user)) {
             return response()->json(["error" => "user_id error"]);
         }
+        $pay_method = $request->input("pay_method", self::WECHAT);
         $user_id = $request->input("user_id");
         $order_no = $request->input("order_no");
         $channel_id = $request->input("channel_id");
@@ -158,19 +163,132 @@ class PayController extends Controller
             return response()->json(["msg" => "ok due to sandbox"]);
         } else {
             //TODO alipay wechat etc
-            return redirect("http://baidu.com");
+            $url = "http://baidu.com";
+            switch ($pay_method) {
+                case self::WECHAT:
+                    $url = $this->buildWeChatUrl($channel_order_id, $product_id, $existObj["product_desc"], $existObj["money"], $existObj["extension"]);
+                    break;
+                case self::ALIPAY:
+                    break;
+                case self::TENPAY:
+                    break;
+                default:
+                    break;
+            }
+            return redirect($url);
         }
     }
 
-    private function doRequest($url, $post, $isPost = 1)
+    /**
+     * @param $out_trade_no
+     * @param $product_id
+     * @param $body
+     * @param $detail
+     * @param $total_fee
+     * @param $attach
+     *
+     * <xml>
+     * <appid>wx2421b1c4370ec43b</appid>
+     * <attach>支付测试</attach>
+     * <body>H5支付测试</body>
+     * <mch_id>10000100</mch_id>
+     * <nonce_str>1add1a30ac87aa2db72f57a2375d8fec</nonce_str>
+     * <notify_url>http://wxpay.wxutil.com/pub_v2/pay/notify.v2.php</notify_url>
+     * <openid>oUpF8uMuAJO_M2pxb1Q9zNjWeS6o</openid>
+     * <out_trade_no>1415659990</out_trade_no>
+     * <spbill_create_ip>14.23.150.211</spbill_create_ip>
+     * <total_fee>1</total_fee>
+     * <trade_type>MWEB</trade_type>
+     * <scene_info>{"h5_info": {"type":"IOS","app_name": "王者荣耀","package_name": "com.tencent.tmgp.sgame"}}</scene_info>
+     * <sign>0CB01533B8C1EF103065174F50BCA001</sign>
+     * </xml>
+     */
+    private function buildWeChatUrl($out_trade_no, $product_id, $body, $total_fee, $attach)
+    {
+        $params = [];
+        $url = "https://api.mch.weixin.qq.com/pay/unifiedorder";
+        $params["appid"] = env("WECHAT_APPID", "");
+        $params["key"] = env("WECHAT_KEY", "");
+        $params["mch_id"] = env("WECHAT_MCH_ID", "");
+        $params["device_info"] = "WEB";
+        $params["nonce_str"] = $this->getUniqueID();
+        $params["sign_type"] = "MD5";
+        $params["body"] = $body;
+        $params["detail"] = "";
+        $params["attach"] = $attach;
+        $params["out_trade_no"] = $out_trade_no;
+        $params["fee_type"] = "CNY";
+        $params["total_fee"] = $total_fee;
+        $params["spbill_create_ip"] = $this->getClientIp();
+        $params["time_start"] = date("yyyyMMddHHmmss");
+        $params["time_expire"] = date("yyyyMMddHHmmss", time() + 60 * 60 * 1);
+        $params["goods_tag"] = "";
+        $params["notify_url"] = env("WECHAT_NOTIFY_URL", "");
+        $params["trade_type"] = "MWEB";
+        $params["product_id"] = $product_id;
+        $params["limit_pay"] = "";
+        $params["openid"] = "";
+        $json_info = ["h5_info" => ["type" => env("WECHAT_JSON_TYPE"), "wap_url" => env("WECHAT_JSON_URL"), "wap_name" => env("WECHAT_JSON_NAME")]];
+        $params["scene_info"] = json_encode($json_info);
+        $sign = $this->calcSignForWeChat($params, $params["key"], $params["sign_type"]);
+        $params["sign"] = $sign;
+        $xml = $this->array_to_xml($params, new \SimpleXMLElement('<?xml version="1.0"?><data></data>'));
+        $result = $this->doRequest($url, $xml->asXML(), 1, 1);
+        $xmlObj = simplexml_load_string($result);
+        var_dump($xmlObj);
+    }
+
+    private function array_to_xml(array $arr, \SimpleXMLElement $xml)
+    {
+        foreach ($arr as $k => $v) {
+            is_array($v)
+                ? $this->array_to_xml($v, $xml->addChild($k))
+                : $xml->addChild($k, $v);
+        }
+        return $xml;
+    }
+
+    private function getClientIp()
+    {
+        $cip = "unknown";
+        if ($_SERVER["REMOTE_ADDR"]) {
+            $cip = $_SERVER["REMOTE_ADDR"];
+        } elseif (getenv("REMOTE_ADDR")) {
+            $cip = getenv("REMOTE_ADDR");
+        }
+        return $cip;
+    }
+
+    private function calcSignForWeChat($data, $key, $type = "MD5")
+    {
+        ksort($data);
+        $str = "";
+        foreach ($data as $k => $v) {
+            if (empty($v)) {
+                continue;
+            }
+            $str .= ($k . "=" . $v . "&");
+        }
+        $str .= ("key" . "=" . $key);
+        if ($type == "MD5") {
+            return strtoupper(md5($str));
+        } else {
+            return strtoupper(hash_hmac("sha256", $str, $key));
+        }
+    }
+
+
+    private function doRequest($url, $post, $isPost = 1, $isRaw = 0)
     {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_POST, $isPost);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($post));
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $isRaw ? $post : http_build_query($post));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
         curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); //不验证证书
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false); //不验证证书
         $response = curl_exec($ch);
         curl_close($ch);
         return $response;
@@ -195,6 +313,6 @@ class PayController extends Controller
 
     public function callback(Request $request)
     {
-
+        $this->validate($request, []);
     }
 }
