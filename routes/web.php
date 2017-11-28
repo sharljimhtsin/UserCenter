@@ -76,6 +76,8 @@ $router->group(['prefix' => 'pay', 'middleware' => []], function () use ($router
     $router->post('add', 'PayController@add');
     $router->post('pay', 'PayController@pay');
     $router->post('callbackForWeChat', 'PayController@callbackForWeChat');
+    $router->post('callbackForAliPay', 'PayController@callbackForAliPay');
+    $router->post('test', 'PayController@test');
     $router->get("/{foobar}", function ($foobar) use ($router) {
         return "/" . $foobar;
     });

@@ -10,6 +10,8 @@ namespace App\Http\Controllers;
 
 
 use App\Channel;
+use App\Lib\Alipay\AlipayTradeService;
+use App\Lib\Alipay\AlipayTradeWapPayContentBuilder;
 use App\Mapping;
 use App\PayOrder;
 use Illuminate\Http\Request;
@@ -22,7 +24,7 @@ class PayController extends Controller
      */
     public function __construct()
     {
-        $this->middleware("user", ["except" => ["callbackForWeChat"]]);
+        $this->middleware("user", ["except" => ["callbackForWeChat", "callbackForAliPay", "test"]]);
     }
 
     public function index(Request $request)
@@ -169,14 +171,61 @@ class PayController extends Controller
                     $url = $this->buildWeChatUrl($order_no, $product_id, $existObj["product_desc"], $existObj["money"], $channelObj["channel_id"]);
                     break;
                 case self::ALIPAY:
+                    $url = $this->buildAliPayUrl($existObj["product_desc"], $existObj["product_name"], $order_no, $existObj["money"], $channelObj["channel_id"]);
                     break;
                 case self::TENPAY:
                     break;
                 default:
                     break;
             }
-            return redirect($url);
+            return redirect()->to($url);
         }
+    }
+
+    /**
+     * @param $body
+     * @param $subject
+     * @param $out_trade_no
+     * @param $total_amount
+     * @param $arg
+     * @return bool|mixed|\SimpleXMLElement|string
+     *
+     * $aop = new AopClient ();
+     * $aop->gatewayUrl = 'https://openapi.alipay.com/gateway.do';
+     * $aop->appId = 'your app_id';
+     * $aop->rsaPrivateKey = '请填写开发者私钥去头去尾去回车，一行字符串';
+     * $aop->alipayrsaPublicKey='请填写支付宝公钥，一行字符串';
+     * $aop->apiVersion = '1.0';
+     * $aop->postCharset='GBK';
+     * $aop->format='json';
+     * $aop->signType='RSA2';
+     * $request = new AlipayTradeWapPayRequest ();
+     * $request->setBizContent("{" .
+     * "    \"body\":\"对一笔交易的具体描述信息。如果是多种商品，请将商品描述字符串累加传给body。\"," .
+     * "    \"subject\":\"大乐透\"," .
+     * "    \"out_trade_no\":\"70501111111S001111119\"," .
+     * "    \"timeout_express\":\"90m\"," .
+     * "    \"total_amount\":9.00," .
+     * "    \"product_code\":\"QUICK_WAP_WAY\"" .
+     * "  }");
+     * $result = $aop->pageExecute ( $request);
+     * echo $result;
+     */
+    private function buildAliPayUrl($body, $subject, $out_trade_no, $total_amount, $arg)
+    {
+        //超时时间
+        $timeout_express = "1m";
+        $payRequestBuilder = new AlipayTradeWapPayContentBuilder();
+        $payRequestBuilder->setBody($body);
+        $payRequestBuilder->setSubject($subject);
+        $payRequestBuilder->setOutTradeNo($out_trade_no);
+        $payRequestBuilder->setTotalAmount($total_amount);
+        $payRequestBuilder->setTimeExpress($timeout_express);
+        $payRequestBuilder->setPassbackParams($arg);
+        $config = config("alipay");
+        $payResponse = new AlipayTradeService($config);
+        $result = $payResponse->wapPay($payRequestBuilder, $config['return_url'], $config['notify_url']);
+        return $result;
     }
 
     /**
@@ -385,5 +434,24 @@ class PayController extends Controller
         $result["return_msg"] = "";
         $xml = $this->array_to_xml($result, new \SimpleXMLElement('<?xml version="1.0"?><data></data>'));
         return response($xml->asXML());
+    }
+
+    /**
+     * @param Request $request
+     *
+     * https://api.xx.com/receive_notify.htm?total_amount=2.00&buyer_id=2088102116773037&body=大乐透2.1&trade_no=2016071921001003030200089909&refund_fee=0.00¬ify_time=2016-07-19 14:10:49&subject=大乐透2.1&sign_type=RSA2&charset=utf-8¬ify_type=trade_status_sync&out_trade_no=0719141034-6418&gmt_close=2016-07-19 14:10:46&gmt_payment=2016-07-19 14:10:47&trade_status=TRADE_SUCCESS&version=1.0&sign=kPbQIjX+xQc8F0/A6/AocELIjhhZnGbcBN6G4MM/HmfWL4ZiHM6fWl5NQhzXJusaklZ1LFuMo+lHQUELAYeugH8LYFvxnNajOvZhuxNFbN2LhF0l/KL8ANtj8oyPM4NN7Qft2kWJTDJUpQOzCzNnV9hDxh5AaT9FPqRS6ZKxnzM=&gmt_create=2016-07-19 14:10:44&app_id=2015102700040153&seller_id=2088102119685838¬ify_id=4a91b7a78a503640467525113fb7d8bg8e
+     */
+    public function callbackForAliPay(Request $request)
+    {
+        $arr = $request->all();
+        $config = config("alipay");
+        $aliPayService = new AlipayTradeService($config);
+        $result = $aliPayService->check($arr);
+    }
+
+    public function test(Request $request)
+    {
+        $url = $this->buildAliPayUrl("a", "s", "c", "c", "d");
+        return response($url);
     }
 }
