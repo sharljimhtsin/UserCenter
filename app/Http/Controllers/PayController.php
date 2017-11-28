@@ -345,9 +345,8 @@ class PayController extends Controller
             $xml = $this->array_to_xml($result, new \SimpleXMLElement('<?xml version="1.0"?><data></data>'));
             return response($xml->asXML());
         }
-        $appId = env("WECHAT_APPID", "");
         $key = env("WECHAT_KEY", "");
-        $signStr = $this->calcSignForWeChat($jsonObj, $key, "MD5");
+        $signStr = $this->calcSignForWeChat($jsonObj, $key, trim($jsonObj["sign_type"]));
         if ($signStr != trim($jsonObj["sign"])) {
             $result["return_msg"] = "SIGN NOT MATCH";
             $xml = $this->array_to_xml($result, new \SimpleXMLElement('<?xml version="1.0"?><data></data>'));
