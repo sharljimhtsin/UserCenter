@@ -24,7 +24,7 @@ class PayController extends Controller
      */
     public function __construct()
     {
-        $this->middleware("user", ["except" => ["callbackForWeChat", "callbackForAliPay", "test"]]);
+        $this->middleware("user", ["except" => ["callbackForWeChat", "callbackForAliPay", "test", "resultForAliPay"]]);
     }
 
     public function index(Request $request)
@@ -438,8 +438,34 @@ class PayController extends Controller
 
     /**
      * @param Request $request
+     * @return string
+     * https://api.xx.com/receive_notify.htm
+     * ?total_amount=2.00
+     * &buyer_id=2088102116773037
+     * &body=大乐透2.1
+     * &trade_no=2016071921001003030200089909
+     * &refund_fee=0.00
+     * ify_time=2016-07-19 14:10:49
+     * &subject=大乐透2.1
+     * &sign_type=RSA2
+     * &charset=utf-8
+     * ¬ify_type=trade_status_sync
+     * &out_trade_no=0719141034-6418
+     * &gmt_close=2016-07-19 14:10:46
+     * &gmt_payment=2016-07-19 14:10:47
+     * &trade_status=TRADE_SUCCESS
+     * &version=1.0
+     * &sign=kPbQIjX+xQc8F0/A6/AocELIjhhZnGbcBN6G4MM/HmfWL4ZiHM6fWl5NQhzXJusaklZ1LFuMo+lHQUELAYeugH8LYFvxnNajOvZhuxNFbN2LhF0l/KL8ANtj8oyPM4NN7Qft2kWJTDJUpQOzCzNnV9hDxh5AaT9FPqRS6ZKxnzM=
+     * &gmt_create=2016-07-19 14:10:44
+     * &app_id=2015102700040153
+     * &seller_id=2088102119685838
+     * ¬ify_id=4a91b7a78a503640467525113fb7d8bg8e
      *
-     * https://api.xx.com/receive_notify.htm?total_amount=2.00&buyer_id=2088102116773037&body=大乐透2.1&trade_no=2016071921001003030200089909&refund_fee=0.00¬ify_time=2016-07-19 14:10:49&subject=大乐透2.1&sign_type=RSA2&charset=utf-8¬ify_type=trade_status_sync&out_trade_no=0719141034-6418&gmt_close=2016-07-19 14:10:46&gmt_payment=2016-07-19 14:10:47&trade_status=TRADE_SUCCESS&version=1.0&sign=kPbQIjX+xQc8F0/A6/AocELIjhhZnGbcBN6G4MM/HmfWL4ZiHM6fWl5NQhzXJusaklZ1LFuMo+lHQUELAYeugH8LYFvxnNajOvZhuxNFbN2LhF0l/KL8ANtj8oyPM4NN7Qft2kWJTDJUpQOzCzNnV9hDxh5AaT9FPqRS6ZKxnzM=&gmt_create=2016-07-19 14:10:44&app_id=2015102700040153&seller_id=2088102119685838¬ify_id=4a91b7a78a503640467525113fb7d8bg8e
+     * 实际验证过程建议商户添加以下校验。
+     * 1、商户需要验证该通知数据中的out_trade_no是否为商户系统中创建的订单号，
+     * 2、判断total_amount是否确实为该订单的实际金额（即商户订单创建时的金额），
+     * 3、校验通知中的seller_id（或者seller_email) 是否为out_trade_no这笔单据的对应的操作方（有的时候，一个商户可能有多个seller_id/seller_email）
+     * 4、验证app_id是否为该商户本身。
      */
     public function callbackForAliPay(Request $request)
     {
@@ -447,6 +473,90 @@ class PayController extends Controller
         $config = config("alipay");
         $aliPayService = new AlipayTradeService($config);
         $result = $aliPayService->check($arr);
+        if ($result) {//验证成功
+            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            //请在这里加上商户的业务逻辑程序代
+            //——请根据您的业务逻辑来编写程序（以下代码仅作参考）——
+            //获取支付宝的通知返回参数，可参考技术文档中服务器异步通知参数列表
+            //商户订单号
+            $out_trade_no = $arr['out_trade_no'];
+            //交易状态
+            $trade_status = $arr['trade_status'];
+            if ($trade_status == 'TRADE_FINISHED') {
+                //判断该笔订单是否在商户网站中已经做过处理
+                //如果没有做过处理，根据订单号（out_trade_no）在商户网站的订单系统中查到该笔订单的详细，并执行商户的业务程序
+                //请务必判断请求时的total_amount与通知时获取的total_fee为一致的
+                //如果有做过处理，不执行商户的业务程序
+
+                //注意：
+                //退款日期超过可退款期限后（如三个月可退款），支付宝系统发送该交易状态通知
+            } else if ($trade_status == 'TRADE_SUCCESS') {
+                //判断该笔订单是否在商户网站中已经做过处理
+                //如果没有做过处理，根据订单号（out_trade_no）在商户网站的订单系统中查到该笔订单的详细，并执行商户的业务程序
+                //请务必判断请求时的total_amount与通知时获取的total_fee为一致的
+                //如果有做过处理，不执行商户的业务程序
+                $channel_id = $arr["passback_params"];
+                $channelResult = Channel::getQuery()->find($channel_id);
+                if (is_null($channelResult)) {
+                    return response("fail");
+                }
+                $channelObj = $channelResult->toArray();
+                $orderResult = PayOrder::getQuery($channelObj["alias"])->where([["order_no", "=", $out_trade_no], ["channel_id", "=", $channel_id]])->first();
+                if (is_null($orderResult)) {
+                    return response("fail");
+                }
+                $orderObj = $orderResult->toArray();
+                if ($orderObj["status"] != PayOrder::STATUS_CREATE) {
+                    return response("fail");
+                }
+                if (floatval($arr["total_amount"]) != floatval($orderObj["money"])) {
+                    return response("fail");
+                }
+                $orderObj["status"] = PayOrder::STATUS_PAYED;
+                $orderResult->fill($orderObj)->save();
+                $this->notifyChannel($orderObj, $channelObj);
+                //注意：
+                //付款完成后，支付宝系统发送该交易状态通知
+            }
+            //——请根据您的业务逻辑来编写程序（以上代码仅作参考）——
+            return response("success");
+        } else {
+            //验证失败
+            return response("fail");
+        }
+    }
+
+    public function resultForAliPay(Request $request)
+    {
+        $arr = $request->all();
+        $config = config("alipay");
+        $aliPayService = new AlipayTradeService($config);
+        $result = $aliPayService->check($arr);
+
+        /* 实际验证过程建议商户添加以下校验。
+        1、商户需要验证该通知数据中的out_trade_no是否为商户系统中创建的订单号，
+        2、判断total_amount是否确实为该订单的实际金额（即商户订单创建时的金额），
+        3、校验通知中的seller_id（或者seller_email) 是否为out_trade_no这笔单据的对应的操作方（有的时候，一个商户可能有多个seller_id/seller_email）
+        4、验证app_id是否为该商户本身。
+        */
+        if ($result) {//验证成功
+            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            //请在这里加上商户的业务逻辑程序代码
+
+            //——请根据您的业务逻辑来编写程序（以下代码仅作参考）——
+            //获取支付宝的通知返回参数，可参考技术文档中页面跳转同步通知参数列表
+
+            //商户订单号
+            $out_trade_no = htmlspecialchars($arr['out_trade_no']);
+            return response("验证成功<br />外部订单号：" . $out_trade_no);
+
+            //——请根据您的业务逻辑来编写程序（以上代码仅作参考）——
+
+            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        } else {
+            //验证失败
+            return response("验证失败");
+        }
     }
 
     public function test(Request $request)
