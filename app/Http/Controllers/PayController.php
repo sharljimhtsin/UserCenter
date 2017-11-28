@@ -166,7 +166,7 @@ class PayController extends Controller
             $url = "http://baidu.com";
             switch ($pay_method) {
                 case self::WECHAT:
-                    $url = $this->buildWeChatUrl($channel_order_id, $product_id, $existObj["product_desc"], $existObj["money"], $existObj["extension"]);
+                    $url = $this->buildWeChatUrl($order_no, $product_id, $existObj["product_desc"], $existObj["money"], $channelObj["channel_id"]);
                     break;
                 case self::ALIPAY:
                     break;
@@ -217,7 +217,7 @@ class PayController extends Controller
         $params["attach"] = $attach;
         $params["out_trade_no"] = $out_trade_no;
         $params["fee_type"] = "CNY";
-        $params["total_fee"] = $total_fee;
+        $params["total_fee"] = $total_fee * 100;//订单总金额，单位为分
         $params["spbill_create_ip"] = $this->getClientIp();
         $params["time_start"] = date("yyyyMMddHHmmss");
         $params["time_expire"] = date("yyyyMMddHHmmss", time() + 60 * 60 * 1);
@@ -263,7 +263,8 @@ class PayController extends Controller
         ksort($data);
         $str = "";
         foreach ($data as $k => $v) {
-            if (empty($v)) {
+            $v = trim($v);
+            if (empty($v) || "sign" == $k) {
                 continue;
             }
             $str .= ($k . "=" . $v . "&");
@@ -344,6 +345,46 @@ class PayController extends Controller
             $xml = $this->array_to_xml($result, new \SimpleXMLElement('<?xml version="1.0"?><data></data>'));
             return response($xml->asXML());
         }
-        return "OK";
+        $appId = env("WECHAT_APPID", "");
+        $key = env("WECHAT_KEY", "");
+        $signStr = $this->calcSignForWeChat($jsonObj, $key, "MD5");
+        if ($signStr != trim($jsonObj["sign"])) {
+            $result["return_msg"] = "SIGN NOT MATCH";
+            $xml = $this->array_to_xml($result, new \SimpleXMLElement('<?xml version="1.0"?><data></data>'));
+            return response($xml->asXML());
+        }
+        $channel_id = trim($jsonObj["attach"]);
+        $channelResult = Channel::getQuery()->find($channel_id);
+        if (is_null($channelResult)) {
+            $result["return_msg"] = "DATA NULL";
+            $xml = $this->array_to_xml($result, new \SimpleXMLElement('<?xml version="1.0"?><data></data>'));
+            return response($xml->asXML());
+        }
+        $channelObj = $channelResult->toArray();
+        $out_trade_no = trim($jsonObj["out_trade_no"]);
+        $orderResult = PayOrder::getQuery($channelObj["alias"])->where([["order_no", "=", $out_trade_no], ["channel_id", "=", $channel_id]])->first();
+        if (is_null($orderResult)) {
+            $result["return_msg"] = "ORDER NULL";
+            $xml = $this->array_to_xml($result, new \SimpleXMLElement('<?xml version="1.0"?><data></data>'));
+            return response($xml->asXML());
+        }
+        $orderObj = $orderResult->toArray();
+        if ($orderObj["status"] != PayOrder::STATUS_CREATE) {
+            $result["return_msg"] = "ORDER ERROR";
+            $xml = $this->array_to_xml($result, new \SimpleXMLElement('<?xml version="1.0"?><data></data>'));
+            return response($xml->asXML());
+        }
+        if (intval(trim($jsonObj["total_fee"])) != intval($orderObj["money"]) * 100) {//订单总金额，单位为分
+            $result["return_msg"] = "MONEY ERROR";
+            $xml = $this->array_to_xml($result, new \SimpleXMLElement('<?xml version="1.0"?><data></data>'));
+            return response($xml->asXML());
+        }
+        $orderObj["status"] = PayOrder::STATUS_PAYED;
+        $orderResult->fill($orderObj)->save();
+        $this->notifyChannel($orderObj, $channelObj);
+        $result["return_code"] = "SUCCESS";
+        $result["return_msg"] = "";
+        $xml = $this->array_to_xml($result, new \SimpleXMLElement('<?xml version="1.0"?><data></data>'));
+        return response($xml->asXML());
     }
 }
