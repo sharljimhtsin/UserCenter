@@ -166,7 +166,6 @@ class PayController extends Controller
             $this->notifyChannel($existObj, $channelObj);
             return response()->json(["msg" => "ok due to sandbox"]);
         } else {
-            //TODO alipay wechat etc
             $url = "http://baidu.com";
             switch ($pay_method) {
                 case self::WECHAT:
@@ -308,6 +307,7 @@ class PayController extends Controller
      * @param $body
      * @param $total_fee
      * @param $attach
+     * @return string
      *
      * <xml>
      * <appid>wx2421b1c4370ec43b</appid>
@@ -323,6 +323,19 @@ class PayController extends Controller
      * <trade_type>MWEB</trade_type>
      * <scene_info>{"h5_info": {"type":"IOS","app_name": "王者荣耀","package_name": "com.tencent.tmgp.sgame"}}</scene_info>
      * <sign>0CB01533B8C1EF103065174F50BCA001</sign>
+     * </xml>
+     *
+     * <xml>
+     * <return_code><![CDATA[SUCCESS]]></return_code>
+     * <return_msg><![CDATA[OK]]></return_msg>
+     * <appid><![CDATA[wx2421b1c4370ec43b]]></appid>
+     * <mch_id><![CDATA[10000100]]></mch_id>
+     * <nonce_str><![CDATA[IITRi8Iabbblz1Jc]]></nonce_str>
+     * <sign><![CDATA[7921E432F65EB8ED0CE9755F0E86D72F]]></sign>
+     * <result_code><![CDATA[SUCCESS]]></result_code>
+     * <prepay_id><![CDATA[wx201411101639507cbf6ffd8b0779950874]]></prepay_id>
+     * <trade_type><![CDATA[MWEB]]></trade_type>
+     * <mweb_url><![CDATA[https://wx.tenpay.com/cgi-bin/mmpayweb-bin/checkmweb?prepay_id=wx2016121516420242444321ca0631331346&package=1405458241]]></mweb_url>
      * </xml>
      */
     private function buildWeChatUrl($out_trade_no, $product_id, $body, $total_fee, $attach)
@@ -354,10 +367,24 @@ class PayController extends Controller
         $params["scene_info"] = json_encode($json_info);
         $sign = $this->calcSignForWeChat($params, $params["key"], $params["sign_type"]);
         $params["sign"] = $sign;
-        $xml = $this->array_to_xml($params, new \SimpleXMLElement('<?xml version="1.0"?><data></data>'));
-        $result = $this->doRequest($url, $xml->asXML(), 1, 1);
-        $xmlObj = simplexml_load_string($result);
-        var_dump($xmlObj);
+        $xml = QpayMchUtil::arrayToXml($params);
+        $result = $this->doRequest($url, $xml, 1, 1);
+        var_dump($result);
+        $xmlObj = QpayMchUtil::xmlToArray($result);
+        if ($xmlObj && $xmlObj["return_code"] && $xmlObj["return_code"] == "SUCCESS" && $xmlObj["result_code"] && $xmlObj["result_code"] == "SUCCESS") {
+            /**
+             * prepay_id
+             * 预支付交易会话标识
+             * 微信生成的预支付回话标识，用于后续接口调用中使用，该值有效期为2小时,针对H5支付此参数无特殊用途
+             *
+             * mweb_url
+             * 支付跳转链接
+             * mweb_url为拉起微信支付收银台的中间页面，可通过访问该url来拉起微信客户端，完成支付,mweb_url的有效期为5分钟。
+             */
+            return array_key_exists("mweb_url", $xmlObj) ? $xmlObj["mweb_url"] : $xmlObj["prepay_id"];
+        } else {
+            return null;
+        }
     }
 
     private function array_to_xml(array $arr, \SimpleXMLElement $xml)
