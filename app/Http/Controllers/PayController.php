@@ -492,49 +492,49 @@ class PayController extends Controller
         $jsonObj = json_decode(json_encode($xmlObj), JSON_OBJECT_AS_ARRAY);
         $result = ["return_code" => "FAIL", "return_msg" => "ERROR"];
         if (trim($jsonObj["return_code"]) != "SUCCESS") {
-            $xml = $this->array_to_xml($result, new \SimpleXMLElement('<?xml version="1.0"?><data></data>'));
-            return response($xml->asXML());
+            $xml = QpayMchUtil::arrayToXml($result);
+            return response($xml);
         }
         $key = env("WECHAT_KEY", "");
         $signStr = $this->calcSignForWeChat($jsonObj, $key, trim($jsonObj["sign_type"]));
         if ($signStr != trim($jsonObj["sign"])) {
             $result["return_msg"] = "SIGN NOT MATCH";
-            $xml = $this->array_to_xml($result, new \SimpleXMLElement('<?xml version="1.0"?><data></data>'));
-            return response($xml->asXML());
+            $xml = QpayMchUtil::arrayToXml($result);
+            return response($xml);
         }
         $channel_id = trim($jsonObj["attach"]);
         $channelResult = Channel::getQuery()->find($channel_id);
         if (is_null($channelResult)) {
             $result["return_msg"] = "DATA NULL";
-            $xml = $this->array_to_xml($result, new \SimpleXMLElement('<?xml version="1.0"?><data></data>'));
-            return response($xml->asXML());
+            $xml = QpayMchUtil::arrayToXml($result);
+            return response($xml);
         }
         $channelObj = $channelResult->toArray();
         $out_trade_no = trim($jsonObj["out_trade_no"]);
         $orderResult = PayOrder::getQuery($channelObj["alias"])->where([["order_no", "=", $out_trade_no], ["channel_id", "=", $channel_id]])->first();
         if (is_null($orderResult)) {
             $result["return_msg"] = "ORDER NULL";
-            $xml = $this->array_to_xml($result, new \SimpleXMLElement('<?xml version="1.0"?><data></data>'));
-            return response($xml->asXML());
+            $xml = QpayMchUtil::arrayToXml($result);
+            return response($xml);
         }
         $orderObj = $orderResult->toArray();
         if ($orderObj["status"] != PayOrder::STATUS_CREATE) {
             $result["return_msg"] = "ORDER ERROR";
-            $xml = $this->array_to_xml($result, new \SimpleXMLElement('<?xml version="1.0"?><data></data>'));
-            return response($xml->asXML());
+            $xml = QpayMchUtil::arrayToXml($result);
+            return response($xml);
         }
         if (intval(trim($jsonObj["total_fee"])) != intval($orderObj["money"]) * 100) {//订单总金额，单位为分
             $result["return_msg"] = "MONEY ERROR";
-            $xml = $this->array_to_xml($result, new \SimpleXMLElement('<?xml version="1.0"?><data></data>'));
-            return response($xml->asXML());
+            $xml = QpayMchUtil::arrayToXml($result);
+            return response($xml);
         }
         $orderObj["status"] = PayOrder::STATUS_PAYED;
         $orderResult->fill($orderObj)->save();
         $this->notifyChannel($orderObj, $channelObj);
         $result["return_code"] = "SUCCESS";
         $result["return_msg"] = "";
-        $xml = $this->array_to_xml($result, new \SimpleXMLElement('<?xml version="1.0"?><data></data>'));
-        return response($xml->asXML());
+        $xml = QpayMchUtil::arrayToXml($result);
+        return response($xml);
     }
 
     /**
