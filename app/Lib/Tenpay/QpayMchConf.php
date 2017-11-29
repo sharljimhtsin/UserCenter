@@ -1,7 +1,7 @@
 <?php
 
 /**
- * qpayMch.config.php
+ * QpayMchConf.php
  * Created by HelloWorld
  * vers: v1.0.0
  * User: Tencent.com

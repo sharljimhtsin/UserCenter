@@ -8,7 +8,7 @@
 
 namespace App\Lib\Tenpay;
 
-require_once('qpayMch.config.php');
+require_once('QpayMchConf.php');
 
 class QpayMchUtil
 {

@@ -283,6 +283,7 @@ class PayController extends Controller
         $params["attach"] = $attach;
         $qpayApi = new QpayMchAPI('https://qpay.qq.com/cgi-bin/pay/qpay_unified_order.cgi', null, 10);
         $ret = $qpayApi->reqQpay($params);
+        var_dump($ret);
         $obj = QpayMchUtil::xmlToArray($ret);
         if ($obj && $obj["return_code"] && $obj["return_code"] == "SUCCESS" && $obj["result_code"] && $obj["result_code"] == "SUCCESS") {
             /**
@@ -709,7 +710,7 @@ class PayController extends Controller
 
     public function test(Request $request)
     {
-        $url = $this->buildAliPayUrl("a", "s", "c", "c", "d");
+        $url = $this->buildTenPayUrl("a", "s", "100", "c");
         return response($url);
     }
 }
