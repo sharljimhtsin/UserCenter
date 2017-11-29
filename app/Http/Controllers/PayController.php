@@ -632,9 +632,79 @@ class PayController extends Controller
         }
     }
 
+    /**
+     * @param Request $request
+     * @return string
+     *
+     * request示例如下：
+     *
+     * <xml>
+     * <appid><![CDATA[1104606907]]></appid>
+     * <attach><![CDATA[ATTACHEND=&END]]></attach>
+     * <bank_type><![CDATA[BALANCE]]></bank_type>
+     * <cash_fee><![CDATA[1]]></cash_fee>
+     * <device_info><![CDATA[WP00000001]]></device_info>
+     * <fee_type><![CDATA[CNY]]></fee_type>
+     * <mch_id><![CDATA[1900000109]]></mch_id>
+     * <nonce_str><![CDATA[7b14db232445d79c5c86d22bbd8898d3]]></nonce_str>
+     * <openid><![CDATA[D60EFFA28D0698EF57CFC9118C149E94]]></openid>
+     * <out_trade_no><![CDATA[20161025_qpay_unified_order_A]]></out_trade_no>
+     * <sign><![CDATA[DE4335434F33C065C449E261DCE08BCF]]></sign>
+     * <time_end><![CDATA[20161025094946]]></time_end>
+     * <total_fee><![CDATA[1]]></total_fee>
+     * <trade_state><![CDATA[SUCCESS]]></trade_state>
+     * <trade_type><![CDATA[NATIVE]]></trade_type>
+     * <transaction_id><![CDATA[1900000109471610251307259064]]></transaction_id>
+     * </xml>
+     *
+     *response 示例如下：
+     * <xml>
+     * <return_code>SUCCESS</return_code>
+     * </xml>
+     */
     public function callbackForTenPay(Request $request)
     {
-
+        $xmlStr = $request->getContent();
+        $param = QpayMchUtil::xmlToArray($xmlStr);
+        $returnObj = ["return_code" => "FAIL", "return_msg" => "ERROR"];
+        if ($param["trade_state"] != "SUCCESS") {
+            return response(QpayMchUtil::arrayToXml($returnObj));
+        }
+        $sign = $param["sign"];
+        unset($param["sign"]);
+        $signStr = QpayMchUtil::getSign($param);
+        if ($signStr != $sign) {
+            $returnObj["return_msg"] = "SIGN NOT MATCH";
+            return response(QpayMchUtil::arrayToXml($returnObj));
+        }
+        $channel_id = trim($param["attach"]);
+        $channelResult = Channel::getQuery()->find($channel_id);
+        if (is_null($channelResult)) {
+            $returnObj["return_msg"] = "DATA NULL";
+            return response(QpayMchUtil::arrayToXml($returnObj));
+        }
+        $channelObj = $channelResult->toArray();
+        $out_trade_no = trim($param["out_trade_no"]);
+        $orderResult = PayOrder::getQuery($channelObj["alias"])->where([["order_no", "=", $out_trade_no], ["channel_id", "=", $channel_id]])->first();
+        if (is_null($orderResult)) {
+            $returnObj["return_msg"] = "ORDER NULL";
+            return response(QpayMchUtil::arrayToXml($returnObj));
+        }
+        $orderObj = $orderResult->toArray();
+        if ($orderObj["status"] != PayOrder::STATUS_CREATE) {
+            $returnObj["return_msg"] = "ORDER ERROR";
+            return response(QpayMchUtil::arrayToXml($returnObj));
+        }
+        if (intval(trim($param["total_fee"])) != intval($orderObj["money"]) * 100) {//商户订单总金额，单位为分，只能为整数，详见交易金额
+            $returnObj["return_msg"] = "MONEY ERROR";
+            return response(QpayMchUtil::arrayToXml($returnObj));
+        }
+        $orderObj["status"] = PayOrder::STATUS_PAYED;
+        $orderResult->fill($orderObj)->save();
+        $this->notifyChannel($orderObj, $channelObj);
+        $returnObj["return_code"] = "SUCCESS";
+        $returnObj["return_msg"] = "";
+        return response(QpayMchUtil::arrayToXml($returnObj));
     }
 
     public function test(Request $request)
