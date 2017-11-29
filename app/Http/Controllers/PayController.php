@@ -12,6 +12,8 @@ namespace App\Http\Controllers;
 use App\Channel;
 use App\Lib\Alipay\AlipayTradeService;
 use App\Lib\Alipay\AlipayTradeWapPayContentBuilder;
+use App\Lib\Tenpay\QpayMchAPI;
+use App\Lib\Tenpay\QpayMchUtil;
 use App\Mapping;
 use App\PayOrder;
 use Illuminate\Http\Request;
@@ -24,7 +26,7 @@ class PayController extends Controller
      */
     public function __construct()
     {
-        $this->middleware("user", ["except" => ["callbackForWeChat", "callbackForAliPay", "test", "resultForAliPay"]]);
+        $this->middleware("user", ["except" => ["callbackForWeChat", "callbackForAliPay", "test", "resultForAliPay", "callbackForTenPay"]]);
     }
 
     public function index(Request $request)
@@ -174,6 +176,7 @@ class PayController extends Controller
                     $url = $this->buildAliPayUrl($existObj["product_desc"], $existObj["product_name"], $order_no, $existObj["money"], $channelObj["channel_id"]);
                     break;
                 case self::TENPAY:
+                    $url = $this->buildTenPayUrl($order_no, $existObj["product_desc"], $existObj["money"], $channelObj["channel_id"]);
                     break;
                 default:
                     break;
@@ -226,6 +229,76 @@ class PayController extends Controller
         $payResponse = new AlipayTradeService($config);
         $result = $payResponse->wapPay($payRequestBuilder, $config['return_url'], $config['notify_url']);
         return $result;
+    }
+
+    /**
+     * @param $out_trade_no
+     * @param $body
+     * @param $total_fee
+     * @param $attach
+     * @return string
+     *
+     * request示例如下：
+     *
+     * <xml>
+     * <attach>ATTACH</attach>
+     * <body>BODY</body>
+     * <device_info>WP00000001</device_info>
+     * <fee_type>CNY</fee_type>
+     * <mch_id>1900005911</mch_id>
+     * <nonce_str>bc9951066dec3b15ae352497daeef3c5</nonce_str>
+     * <notify_url>https://www.yourwebsite.com/some/interface/</notify_url>
+     * <out_trade_no>da7c50bebd600b999693c82a9a67fc86</out_trade_no>
+     * <spbill_create_ip>your.real.ipv4.address</spbill_create_ip>
+     * <total_fee>1</total_fee>
+     * <trade_type>NATIVE</trade_type>
+     * <sign>b35dc6220f1d2d55f91030f744780665</sign>
+     * </xml>
+     *
+     * response示例如下：
+     *
+     * <xml>
+     * <return_code><![CDATA[SUCCESS]]></return_code>
+     * <return_msg><![CDATA[SUCCESS]]></return_msg>
+     * <retcode><![CDATA[0]]></retcode>
+     * <retmsg><![CDATA[ok]]></retmsg>
+     * <code_url><![CDATA[https://qpay.qq.com/qr/5e272a22]]></code_url>
+     * <mch_id><![CDATA[1900005911]]></mch_id>
+     * <nonce_str><![CDATA[d93b2ed201a1ba5e1244c409379930b0]]></nonce_str>
+     * <prepay_id><![CDATA[5Vd929f526581b64d61577ecaf2eb84b]]></prepay_id>
+     * <result_code><![CDATA[SUCCESS]]></result_code>
+     * <sign><![CDATA[DF2AA0A75C4AB27C823FAB63DE4CEC90]]></sign>
+     * <trade_type><![CDATA[NATIVE]]></trade_type>
+     * </xml>
+     */
+    private function buildTenPayUrl($out_trade_no, $body, $total_fee, $attach)
+    {
+        $params = array();
+        $params["out_trade_no"] = $out_trade_no;
+        $params["body"] = $body;
+        $params["fee_type"] = "CNY";
+        $params["spbill_create_ip"] = $this->getClientIp();
+        $params["total_fee"] = $total_fee * 100;//商户订单总金额，单位为分，只能为整数，详见交易金额
+        $params["trade_type"] = "JSAPI";//JSAPI网页支付即前文说的公众号支付，可在QQ公众号、空间动态、聊天会话中点击页面链接，或者用手机QQ“扫一扫”扫描页面地址二维码在手机QQ中打开商户HTML5页面，在页面内下单完成支付。
+        $params["attach"] = $attach;
+        $qpayApi = new QpayMchAPI('https://qpay.qq.com/cgi-bin/pay/qpay_unified_order.cgi', null, 10);
+        $ret = $qpayApi->reqQpay($params);
+        $obj = QpayMchUtil::xmlToArray($ret);
+        if ($obj && $obj["return_code"] && $obj["return_code"] == "SUCCESS" && $obj["result_code"] && $obj["result_code"] == "SUCCESS") {
+            /**
+             * code_url
+             * 二维码链接
+             * 当trade_type为 NATIVE 时，才会返回该字段，值可以直接转换为二维码，用户使用手机QQ扫描后，将会打开QQ钱包的支付页面。
+             * APP支付、H5支付不会返回此参数
+             *
+             *prepay_id
+             * QQ钱包的预支付会话标识
+             * QQ钱包的预支付会话标识，用于后续接口调用中使用，该值有效期为2小时
+             */
+            return array_key_exists("code_url", $obj) ? $obj["code_url"] : $obj["prepay_id"];
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -557,6 +630,11 @@ class PayController extends Controller
             //验证失败
             return response("验证失败");
         }
+    }
+
+    public function callbackForTenPay(Request $request)
+    {
+
     }
 
     public function test(Request $request)
