@@ -182,7 +182,7 @@ class PayController extends Controller
                     break;
                 case self::IAPPPAY:
                 default:
-                    $url = $this->buildIAppPayUrl($order_no, $existObj["money"], $product_id, $existObj["product_name"], $channelObj["channel_id"]);
+                    $url = $this->buildIAppPayUrl($order_no, $existObj["money"], $product_id, $existObj["product_name"], $channelObj["channel_id"], $existObj["user_id"]);
                     break;
             }
             return redirect()->to($url);
@@ -306,16 +306,16 @@ class PayController extends Controller
         }
     }
 
-    private function buildIAppPayUrl($cporderid, $price, $waresid, $waresname, $cpprivateinfo)
+    private function buildIAppPayUrl($cporderid, $price, $waresid, $waresname, $cpprivateinfo, $appuserid)
     {
         //下单接口
         $orderReq['appid'] = Config::appid;
-        $orderReq['waresid'] = $waresid;
+        $orderReq['waresid'] = intval($waresid);
         $orderReq['waresname'] = $waresname;
         $orderReq['cporderid'] = $cporderid; //确保该参数每次 都不一样。否则下单会出问题。
-        $orderReq['price'] = $price;   //单位：元
+        $orderReq['price'] = floatval($price);   //单位：元
         $orderReq['currency'] = 'RMB';
-        $orderReq['appuserid'] = '10123059';
+        $orderReq['appuserid'] = $appuserid;
         $orderReq['cpprivateinfo'] = $cpprivateinfo;
         $orderReq['notifyurl'] = 'http://58.250.160.241:8888/IapppayCpSyncForPHPDemo/TradingResultsNotice.php';
         //组装请求报文  对数据签名
@@ -847,8 +847,8 @@ class PayController extends Controller
 
     public function test(Request $request)
     {
-        $this->validate($request, ["aaa" => 'required|email']);
-        $url = $this->buildTenPayUrl("a", "s", "100", "c");
+//        $this->validate($request, ["aaa" => 'required|email']);
+        $url = $this->buildIAppPayUrl("aasdadadafdsfssssaaa", "10.99", "1", "casdasdad", "1222222", "111111");
         return response($url);
     }
 }
