@@ -14,6 +14,8 @@ use App\Lib\Alipay\AlipayTradeService;
 use App\Lib\Alipay\AlipayTradeWapPayContentBuilder;
 use App\Lib\Tenpay\QpayMchAPI;
 use App\Lib\Tenpay\QpayMchUtil;
+use App\Lib\IAppPay\Base;
+use App\Lib\IAppPay\Config;
 use App\Mapping;
 use App\PayOrder;
 use Illuminate\Http\Request;
@@ -26,7 +28,7 @@ class PayController extends Controller
      */
     public function __construct()
     {
-        $this->middleware("user", ["except" => ["callbackForWeChat", "callbackForAliPay", "test", "resultForAliPay", "callbackForTenPay"]]);
+        $this->middleware("user", ["except" => ["callbackForWeChat", "callbackForAliPay", "test", "resultForAliPay", "callbackForTenPay", "callbackForIAppPay"]]);
     }
 
     public function index(Request $request)
@@ -120,6 +122,7 @@ class PayController extends Controller
     const WECHAT = 1;
     const ALIPAY = 2;
     const TENPAY = 3;
+    const IAPPPAY = 4;
 
     public function pay(Request $request)
     {
@@ -177,7 +180,9 @@ class PayController extends Controller
                 case self::TENPAY:
                     $url = $this->buildTenPayUrl($order_no, $existObj["product_desc"], $existObj["money"], $channelObj["channel_id"]);
                     break;
+                case self::IAPPPAY:
                 default:
+                    $url = $this->buildIAppPayUrl($order_no, $existObj["money"], $product_id, $existObj["product_name"], $channelObj["channel_id"]);
                     break;
             }
             return redirect()->to($url);
@@ -298,6 +303,44 @@ class PayController extends Controller
             return array_key_exists("code_url", $obj) ? $obj["code_url"] : $obj["prepay_id"];
         } else {
             return null;
+        }
+    }
+
+    private function buildIAppPayUrl($cporderid, $price, $waresid, $waresname, $cpprivateinfo)
+    {
+        //下单接口
+        $orderReq['appid'] = Config::appid;
+        $orderReq['waresid'] = $waresid;
+        $orderReq['waresname'] = $waresname;
+        $orderReq['cporderid'] = $cporderid; //确保该参数每次 都不一样。否则下单会出问题。
+        $orderReq['price'] = $price;   //单位：元
+        $orderReq['currency'] = 'RMB';
+        $orderReq['appuserid'] = '10123059';
+        $orderReq['cpprivateinfo'] = $cpprivateinfo;
+        $orderReq['notifyurl'] = 'http://58.250.160.241:8888/IapppayCpSyncForPHPDemo/TradingResultsNotice.php';
+        //组装请求报文  对数据签名
+        $base = new Base();
+        $reqData = $base->composeReq($orderReq, Config::appkey);
+        //发送到爱贝服务后台请求下单
+        $respData = $base->request_by_curl(Config::orderUrl, $reqData, 'order test');
+
+        //验签数据并且解析返回报文
+        if (!$base->parseResp($respData, Config::platpkey, $respJson)) {
+            return null;
+        } else {
+            //下单成功之后获取 transid
+            $transid = $respJson->transid;
+            //得到transid 再次组装数据并签名。
+            //下单接口
+            $orderReq['tid'] = $transid;
+            $orderReq['app'] = Config::appid; // appid
+            $orderReq['url_r'] = 'http://www.baidu.com'; //支付成功后支付回调URL地址
+            $orderReq['url_h'] = 'http://www.baidu.com'; //返回商户URL地址
+            //组装请求报文   对数据签名
+            $reqData = $base->h5composeReq($orderReq, Config::appkey);
+            //这里组装的最终数据 就可以用浏览器访问调出收银台。
+            //我们的常连接版本 有PC 版本 和移动版本。 根据使用的环境不同请更换相应的URL:$h5url,$pcurl.
+            return Config::h5url . $reqData;
         }
     }
 
@@ -735,8 +778,76 @@ class PayController extends Controller
         return response(QpayMchUtil::arrayToXml($returnObj));
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\Response|\Laravel\Lumen\Http\ResponseFactory
+     *
+     * 请求格式示例
+     *
+     * transdata=urlencode(xxx)&sign=urlencode(yyy)&signtype=RSA
+     * urlencode前内容：
+     * transdata={"transtype":0,"cporderid":"1","transid":"2","appuserid":"test","appid":"3","waresid":31,"feetype":
+     * 4,"money":5.00,"currency":"RMB","result":0,"transtime":"2012-12-12 12:11:10","cpprivate":"test","paytype":1}
+     * &sign=xxxxxx&signtype=RSA
+     */
+    public function callbackForIAppPay(Request $request)
+    {
+        $string = $request->all();//接收post请求数据
+        $transdata = $string['transdata'];
+        if (stripos("%22", $transdata)) { //判断接收到的数据是否做过 Urldecode处理，如果没有处理则对数据进行Urldecode处理
+            $string = array_map('urldecode', $string);
+        }
+        $respData = 'transdata=' . $string['transdata'] . '&sign=' . $string['sign'] . '&signtype=' . $string['signtype'];//把数据组装成验签函数要求的参数格式
+        //  验签函数parseResp（） 中 只接受明文数据。数据如：transdata={"appid":"3003686553","appuserid":"10123059","cporderid":"1234qwedfq2as123sdf3f1231234r","cpprivate":"11qwe123r23q232111","currency":"RMB","feetype":0,"money":0.12,"paytype":403,"result":0,"transid":"32011601231456558678","transtime":"2016-01-23 14:57:15","transtype":0,"waresid":1}&sign=jeSp7L6GtZaO/KiP5XSA4vvq5yxBpq4PFqXyEoktkPqkE5b8jS7aeHlgV5zDLIeyqfVJKKuypNUdrpMLbSQhC8G4pDwdpTs/GTbDw/stxFXBGgrt9zugWRcpL56k9XEXM5ao95fTu9PO8jMNfIV9mMMyTRLT3lCAJGrKL17xXv4=&signtype=RSA
+        $base = new Base();
+        if (!$base->parseResp($respData, Config::platpkey, $respJson)) {
+            //验签失败
+            return response("failed");
+        } else {
+            //以下是 验签通过之后 对数据的解析。
+            $transdata = $string['transdata'];
+            $arr = json_decode($transdata);
+            $appid = $arr->appid;
+            $appuserid = $arr->appuserid;
+            $cporderid = $arr->cporderid;
+            $cpprivate = $arr->cpprivate;
+            $money = $arr->money;
+            $result = $arr->result;
+            $transid = $arr->transid;
+            $transtime = $arr->transtime;
+            $waresid = $arr->waresid;
+            if (intval($result) == 1) {
+                return response("failed");
+            }
+            $channel_id = trim($cpprivate);
+            $channelResult = Channel::getQuery()->find($channel_id);
+            if (is_null($channelResult)) {
+                return response("failed");
+            }
+            $channelObj = $channelResult->toArray();
+            $out_trade_no = trim($cporderid);
+            $orderResult = PayOrder::getQuery($channelObj["alias"])->where([["order_no", "=", $out_trade_no], ["channel_id", "=", $channel_id]])->first();
+            if (is_null($orderResult)) {
+                return response("failed");
+            }
+            $orderObj = $orderResult->toArray();
+            if ($orderObj["status"] != PayOrder::STATUS_CREATE) {
+                return response("failed");
+            }
+            if (floatval($money) != floatval($orderObj["money"])) {//本次交易的金额（请务必严格校验商品金额与交易的金额是否一致）货币类型以及单位：RMB – 人民币（单位：元）
+                return response("failed");
+            }
+            $orderObj["status"] = PayOrder::STATUS_PAYED;
+            $orderResult->fill($orderObj)->save();
+            $this->notifyChannel($orderObj, $channelObj);
+            //验签成功
+            return response("success");
+        }
+    }
+
     public function test(Request $request)
     {
+        $this->validate($request, ["aaa" => 'required|email']);
         $url = $this->buildTenPayUrl("a", "s", "100", "c");
         return response($url);
     }
