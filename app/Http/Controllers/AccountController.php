@@ -45,9 +45,15 @@ class AccountController extends Controller
     /**
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
+     *
+     * 常规登录接口
+     * 用户标志 user_key
+     * 密码 password
+     *
      */
     public function login(Request $request)
     {
+        $this->validate($request, ["user_key" => "required", "password" => "required"]);
         $user_key = $request->input("user_key", "qwerty");
         $password = $request->input("password", "123456");
         $result = Account::query()->where([["user_key", "=", $user_key], ["password", "=", md5($password)], ["account_type", "=", Account::NORMAL_LOGIN], ["status", "=", Account::NORMAL_STATUS]])->first();
@@ -70,9 +76,14 @@ class AccountController extends Controller
     /**
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
+     *
+     * 手机登录
+     * 手机号 telephone
+     * 验证码 smsCode
      */
     public function telephoneLogin(Request $request)
     {
+        $this->validate($request, ["telephone" => "required", "smsCode" => "required"]);
         $telephone = $request->input("telephone", "13800138000");
         $smsCode = $request->input("smsCode", "0000");
         $smsCodeResult = SmsCode::query()->find($telephone);
@@ -105,9 +116,13 @@ class AccountController extends Controller
     /**
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
+     *
+     * 临时登录
+     * 设备号 device_id
      */
     public function tempLogin(Request $request)
     {
+        $this->validate($request, ["device_id" => "required"]);
         $user_key = $request->input("device_id", "qwerty");
         $result = Account::query()->firstOrNew(["user_key" => $user_key, "account_type" => Account::TEMP_LOGIN, "status" => Account::NORMAL_STATUS], []);
         $accountObj = $result->toArray();
@@ -133,9 +148,15 @@ class AccountController extends Controller
     /**
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
+     *
+     * 发送验证码（带对应user_id 验证token）
+     * telephone 手机号
+     * user_id 用户ID
+     *
      */
     public function sendSmsCode(Request $request)
     {
+        $this->validate($request, ["telephone" => "required", "user_id" => "required"]);
         $telephone = $request->input("telephone", "13800138000");
         $user_id = $request->input("user_id", "9138");
         $userResult = User::query()->find($user_id);
@@ -157,9 +178,14 @@ class AccountController extends Controller
     /**
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
+     *
+     * 发送验证码（不带对应user_id 不验证token）
+     * telephone 手机号
+     *
      */
     public function sendSmsCodeNoToken(Request $request)
     {
+        $this->validate($request, ["telephone" => "required"]);
         $telephone = $request->input("telephone", "13800138000");
         $smsCodeStr = $this->genRandomSmsCode();
         SmsCode::query()->updateOrCreate(["telephone" => $telephone], ["telephone" => $telephone, "code" => $smsCodeStr, "ttl" => $this->getSmsCodeTTLTime()]);
@@ -169,9 +195,15 @@ class AccountController extends Controller
     /**
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
+     *
+     * 绑定手机号
+     * telephone 手机号
+     * smsCode 验证码
+     * user_id 用户ID
      */
     public function bindPhone(Request $request)
     {
+        $this->validate($request, ["telephone" => "required", "smsCode" => "required", "user_id" => "required"]);
         $telephone = $request->input("telephone", "13800138000");
         $smsCode = $request->input("smsCode", "0000");
         $user_id = $request->input("user_id", "9138");
@@ -205,9 +237,15 @@ class AccountController extends Controller
     /**
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
+     *
+     * 注册用户
+     * user_key 用户名
+     * password 密码
+     *
      */
     public function register(Request $request)
     {
+        $this->validate($request, ["user_key" => "required", "password" => "required"]);
         $user_key = $request->input("user_key", "qwerty");
         $password = $request->input("password", "123456");
         $result = Account::getQuery()->where([["user_key", "=", $user_key], ["account_type", "=", Account::NORMAL_LOGIN], ["status", "=", Account::NORMAL_STATUS]])->first();
@@ -228,9 +266,16 @@ class AccountController extends Controller
     /**
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
+     *
+     * 修改密码
+     * user_id 用户ID
+     * oldPassword 旧密码
+     * newPassword 新密码
+     *
      */
     public function modifyPassword(Request $request)
     {
+        $this->validate($request, ["user_id" => "required", "oldPassword" => "required", "newPassword" => "required"]);
         $user_id = $request->input("user_id", "0000");
         $oldPassword = $request->input("oldPassword", "4321");
         $newPassword = $request->input("newPassword", "1234");
@@ -251,9 +296,16 @@ class AccountController extends Controller
     /**
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
+     *
+     * 重置密码
+     * telephone 手机号
+     * smsCode 验证码
+     * newPassword 新密码
+     *
      */
     public function resetPassword(Request $request)
     {
+        $this->validate($request, ["telephone" => "required", "smsCode" => "required", "newPassword" => "required"]);
         $telephone = $request->input("telephone", "13800138000");
         $smsCode = $request->input("smsCode", "0000");
         $newPassword = $request->input("newPassword", "1234");
@@ -284,8 +336,19 @@ class AccountController extends Controller
         }
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     *
+     * 绑定用户（针对平台用户）
+     * user_id 用户ID
+     * cp_user_id 平台用户ID
+     * cp_id 平台ID
+     * sign 签名
+     */
     public function attach(Request $request)
     {
+        $this->validate($request, ["user_id" => "required", "cp_user_id" => "required", "cp_id" => "required", "sign" => "required"]);
         $user_id = $request->input("user_id", "0000");
         $cp_user_id = $request->input("cp_user_id", "0000");
         $cp_id = $request->input("cp_id", "0000");
