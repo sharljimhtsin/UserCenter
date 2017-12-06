@@ -255,7 +255,7 @@ class AccountController extends Controller
                     return response()->json(["error" => "smsCode invalid"]);
                 }
                 // 存入 session tag 以便下一步操作
-                $request->session()->flash("reBind", 1);
+                $_SESSION["reBind"] = "1";
                 return response()->json(["msg" => "OK", "code" => "0"]);
             } else {
                 return response()->json(["error" => "telephone error"]);
@@ -279,7 +279,8 @@ class AccountController extends Controller
         $telephone = $request->input("telephone", "13800138000");
         $smsCode = $request->input("smsCode", "0000");
         $password = $request->input("password", "0000");
-        $user_id = $request->input("user_id", "9138");
+        $user_id = $request->input("user_id", "0000");
+        $token = $request->input("token", "0000");
         //注册
         if (!$request->has("user_id")) {
             $this->validate($request, ["telephone" => "required", "smsCode" => "required", "password" => "required"]);
@@ -319,18 +320,27 @@ class AccountController extends Controller
             }
         } else {
             //绑定、换绑手机号
-            if (is_null($request->user())) {
-                return response()->json(["error" => "user_id null"]);
-            }
-            if ($request->session()->has("reBind")) {
+            if (isset($_SESSION["reBind"])) {
                 $reBind = true;
-                $this->validate($request, ["telephone" => "required", "smsCode" => "required"]);
+                $this->validate($request, ["telephone" => "required", "smsCode" => "required", "user_id" => "required", "token" => "required"]);
             } else {
                 $reBind = false;
-                $this->validate($request, ["telephone" => "required", "smsCode" => "required", "password" => "required"]);
+                $this->validate($request, ["telephone" => "required", "smsCode" => "required", "password" => "required", "user_id" => "required", "token" => "required"]);
             }
             $userResult = User::query()->find($user_id);
             if ($userResult) {
+                $tokenResult = Token::query()->find($user_id);
+                if ($tokenResult) {
+                    $tokenObj = $tokenResult->toArray();
+                    if ($token != $tokenObj["token"]) {
+                        return response()->json(["error" => "token error"]);
+                    }
+                    if (time() > $tokenObj["expire_time"]) {
+                        return response()->json(["error" => "token expired"]);
+                    }
+                } else {
+                    return response()->json(["error" => "token error"]);
+                }
                 $userObj = $userResult->toArray();
                 $notBind = is_null($userObj["telephone"]);
                 $telephoneExist = User::query()->where([["telephone", "=", $telephone], ["user_id", "!=", $user_id]])->count("user_id");
@@ -348,6 +358,7 @@ class AccountController extends Controller
                     $accountResult = Account::query()->create(["user_key" => $telephone, "password" => md5($password), "account_type" => Account::TELEPHONE_LOGIN, "union_user_id" => $user_id, "status" => Account::NORMAL_STATUS]);
                     // once telephone bind-ed,disable quick login of it
                     Account::query()->where([["union_user_id", "=", $user_id], ["account_type", "=", Account::TEMP_LOGIN]])->update(["status" => Account::DISABLE_STATUS]);
+                    unset($_SESSION["reBind"]);
                     return response()->json(["account" => $accountResult->toArray()]);
                 } else {
                     return response()->json(["error" => "telephone error"]);
