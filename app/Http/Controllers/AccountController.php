@@ -165,7 +165,7 @@ class AccountController extends Controller
         $userObj = $userResult->toArray();
         if (empty($userObj)) {
             $userObj["user_id"] = $accountObj["union_user_id"];
-            $userObj["nickname"] = "游客_" . md5($accountObj["union_user_id"]);
+            $userObj["nickname"] = "游客_" . $this->getRandomSuffix();
             $userObj["avatar"] = "http://api.playsm.com/resource/img/avator.png";
             $userObj["birthday"] = date("Y-m-d H:i:s", strtotime("2000-01-01"));
             $userObj["sex"] = User::SEX_MALE;
@@ -265,6 +265,11 @@ class AccountController extends Controller
         }
     }
 
+    private function getRandomSuffix($size = 3)
+    {
+        return bin2hex(random_bytes($size));
+    }
+
     /**
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -305,7 +310,7 @@ class AccountController extends Controller
                 $accountObj = $accountResult->toArray();
                 $userResult = User::query()->create(["user_id" => $user_id]);
                 $userObj = $userResult->toArray();
-                $userObj["nickname"] = "用户_" . md5($user_id);
+                $userObj["nickname"] = "用户_" . $this->getRandomSuffix();
                 $userObj["telephone"] = $telephone;
                 $userObj["avatar"] = "http://api.playsm.com/resource/img/avator.png";
                 $userObj["birthday"] = date("Y-m-d H:i:s", strtotime("2000-01-01"));
