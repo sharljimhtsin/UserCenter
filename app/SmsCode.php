@@ -18,6 +18,9 @@ use Illuminate\Database\Eloquent\Model;
  * `ttl`       BIGINT(20) NULL,
  * PRIMARY KEY (`telephone`)
  * );
+ *
+ * ALTER TABLE `user_center`.`sms_code`
+ * CHANGE COLUMN `ttl` `expire_time` BIGINT(20) NULL DEFAULT NULL ;
  **/
 class SmsCode extends Model implements MultiDB
 {
@@ -43,7 +46,7 @@ class SmsCode extends Model implements MultiDB
      *
      * @var array
      */
-    protected $fillable = ["telephone", "code", "ttl"];
+    protected $fillable = ["telephone", "code", "expire_time"];
 
     /**
      * The attributes that aren't mass assignable.

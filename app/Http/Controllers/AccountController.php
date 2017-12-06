@@ -63,7 +63,7 @@ class AccountController extends Controller
             if ($userResult) {
                 $userObj = $userResult->toArray();
                 $tokenStr = $this->getRandomToken();
-                Token::query()->updateOrCreate(["user_id" => $userObj["user_id"]], ["user_id" => $userObj["user_id"], "token" => $tokenStr, "ttl" => $this->getTokenTTLTime()]);
+                Token::query()->updateOrCreate(["user_id" => $userObj["user_id"]], ["user_id" => $userObj["user_id"], "token" => $tokenStr, "expire_time" => $this->getTokenTTLTime()]);
                 return response()->json(["token" => $tokenStr, "account" => $accountObj, "user" => $userObj]);
             } else {
                 return response()->json(["error" => "user not exist"]);
@@ -91,7 +91,7 @@ class AccountController extends Controller
             return response()->json(["error" => "smsCode error"]);
         }
         $smsCodeObject = $smsCodeResult->toArray();
-        if ($smsCode != $smsCodeObject["code"] || time() > $smsCodeObject["ttl"]) {
+        if ($smsCode != $smsCodeObject["code"] || time() > $smsCodeObject["expire_time"]) {
             return response()->json(["error" => "smsCode invalid"]);
         }
         $accountResult = Account::query()->where([["user_key", "=", $telephone], ["account_type", "=", Account::TELEPHONE_LOGIN], ["status", "=", Account::NORMAL_STATUS]])->first();
@@ -106,7 +106,7 @@ class AccountController extends Controller
         if ($userResult) {
             $userObj = $userResult->toArray();
             $tokenStr = $this->getRandomToken();
-            Token::query()->updateOrCreate(["user_id" => $userObj["user_id"]], ["user_id" => $userObj["user_id"], "token" => $tokenStr, "ttl" => $this->getTokenTTLTime()]);
+            Token::query()->updateOrCreate(["user_id" => $userObj["user_id"]], ["user_id" => $userObj["user_id"], "token" => $tokenStr, "expire_time" => $this->getTokenTTLTime()]);
             return response()->json(["token" => $tokenStr, "account" => $accountObj, "user" => $userObj]);
         } else {
             return response()->json(["error" => "user not exist"]);
@@ -135,13 +135,18 @@ class AccountController extends Controller
         $userObj = $userResult->toArray();
         if (empty($userObj)) {
             $userObj["user_id"] = $accountObj["union_user_id"];
+            $userObj["nickname"] = "游客" . $accountObj["union_user_id"];
+            $userObj["avatar"] = "";
+            $userObj["birthday"] = date("Y-m-d H:i:s", strtotime("2000-01-01"));
+            $userObj["sex"] = User::SEX_MALE;
+            $userObj["signature"] = "签名为空";
             $userObj["role"] = User::NORMAL_ROLE;
             $userObj["status"] = User::NORMAL_STATUS;
             $userResult->fill($userObj);
             $userResult->save();
         }
         $tokenStr = $this->getRandomToken();
-        Token::query()->updateOrCreate(["user_id" => $userObj["user_id"]], ["user_id" => $userObj["user_id"], "token" => $tokenStr, "ttl" => $this->getTokenTTLTime()]);
+        Token::query()->updateOrCreate(["user_id" => $userObj["user_id"]], ["user_id" => $userObj["user_id"], "token" => $tokenStr, "expire_time" => $this->getTokenTTLTime()]);
         return response()->json(["token" => $tokenStr, "account" => $accountObj, "user" => $userObj]);
     }
 
@@ -165,7 +170,7 @@ class AccountController extends Controller
             $telephoneExist = User::query()->where([["telephone", "=", $telephone], ["user_id", "!=", $user_id]])->count("user_id");
             if ((is_null($userObj["telephone"]) || $telephone == $userObj["telephone"]) && $telephoneExist == 0) {
                 $smsCodeStr = $this->genRandomSmsCode();
-                SmsCode::query()->updateOrCreate(["telephone" => $telephone], ["telephone" => $telephone, "code" => $smsCodeStr, "ttl" => $this->getSmsCodeTTLTime()]);
+                SmsCode::query()->updateOrCreate(["telephone" => $telephone], ["telephone" => $telephone, "code" => $smsCodeStr, "expire_time" => $this->getSmsCodeTTLTime()]);
                 return response()->json(["smsCode" => $smsCodeStr]);
             } else {
                 return response()->json(["error" => "telephone not match"]);
@@ -188,7 +193,7 @@ class AccountController extends Controller
         $this->validate($request, ["telephone" => "required"]);
         $telephone = $request->input("telephone", "13800138000");
         $smsCodeStr = $this->genRandomSmsCode();
-        SmsCode::query()->updateOrCreate(["telephone" => $telephone], ["telephone" => $telephone, "code" => $smsCodeStr, "ttl" => $this->getSmsCodeTTLTime()]);
+        SmsCode::query()->updateOrCreate(["telephone" => $telephone], ["telephone" => $telephone, "code" => $smsCodeStr, "expire_time" => $this->getSmsCodeTTLTime()]);
         return response()->json(["smsCode" => $smsCodeStr]);
     }
 
@@ -217,7 +222,7 @@ class AccountController extends Controller
                     return response()->json(["error" => "smsCode error"]);
                 }
                 $smsCodeObject = $smsCodeResult->toArray();
-                if ($smsCode != $smsCodeObject["code"] || time() > $smsCodeObject["ttl"]) {
+                if ($smsCode != $smsCodeObject["code"] || time() > $smsCodeObject["expire_time"]) {
                     return response()->json(["error" => "smsCode invalid"]);
                 }
                 $userObj["telephone"] = $telephone;
@@ -258,7 +263,7 @@ class AccountController extends Controller
             $userResult = User::query()->create(["user_id" => $user_id, "status" => User::NORMAL_STATUS, "role" => User::NORMAL_ROLE]);
             $userObj = $userResult->toArray();
             $tokenStr = $this->getRandomToken();
-            Token::query()->updateOrCreate(["user_id" => $userObj["user_id"]], ["user_id" => $userObj["user_id"], "token" => $tokenStr, "ttl" => $this->getTokenTTLTime()]);
+            Token::query()->updateOrCreate(["user_id" => $userObj["user_id"]], ["user_id" => $userObj["user_id"], "token" => $tokenStr, "expire_time" => $this->getTokenTTLTime()]);
             return response()->json(["token" => $tokenStr, "account" => $accountObj, "user" => $userObj]);
         }
     }
@@ -314,7 +319,7 @@ class AccountController extends Controller
             return response()->json(["error" => "smsCode error"]);
         }
         $smsCodeObject = $smsCodeResult->toArray();
-        if ($smsCode != $smsCodeObject["code"] || time() > $smsCodeObject["ttl"]) {
+        if ($smsCode != $smsCodeObject["code"] || time() > $smsCodeObject["expire_time"]) {
             return response()->json(["error" => "smsCode invalid"]);
         }
         $accountResult = Account::query()->where([["user_key", "=", $telephone], ["account_type", "=", Account::TELEPHONE_LOGIN], ["status", "=", Account::NORMAL_STATUS]])->first();

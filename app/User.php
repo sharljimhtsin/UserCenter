@@ -47,6 +47,9 @@ class User extends Model implements MultiDB
     const NORMAL_STATUS = 1;
     const BAN_STATUS = 2;
     const DISABLE_STATUS = 3;
+    // sex
+    const SEX_MALE = 1;
+    const SEX_FEMALE = 2;
 
     /**
      * The attributes that are mass assignable.

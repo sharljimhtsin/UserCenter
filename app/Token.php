@@ -21,6 +21,9 @@ use Illuminate\Database\Eloquent\Model;
  * ALTER TABLE `user_center`.`token`
  * CHANGE COLUMN `user_id` `user_id` BIGINT(20) NOT NULL ,
  * ADD PRIMARY KEY (`user_id`);
+ *
+ * ALTER TABLE `user_center`.`token`
+ * CHANGE COLUMN `ttl` `expire_time` BIGINT(20) NULL DEFAULT NULL ;
  **/
 class Token extends Model implements MultiDB
 {
@@ -46,7 +49,7 @@ class Token extends Model implements MultiDB
      *
      * @var array
      */
-    protected $fillable = ["user_id", "token", "ttl"];
+    protected $fillable = ["user_id", "token", "expire_time"];
 
     /**
      * The attributes excluded from the model's JSON form.

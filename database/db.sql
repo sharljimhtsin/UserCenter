@@ -1,5 +1,3 @@
-CREATE DATABASE  IF NOT EXISTS `user_center` /*!40100 DEFAULT CHARACTER SET utf8 */;
-USE `user_center`;
 -- MySQL dump 10.13  Distrib 5.7.17, for Win64 (x86_64)
 --
 -- Host: localhost    Database: user_center
@@ -32,7 +30,7 @@ CREATE TABLE `account` (
   `union_user_id` bigint(20) DEFAULT NULL,
   `status` tinyint(5) DEFAULT NULL,
   PRIMARY KEY (`account_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=51 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -104,7 +102,7 @@ CREATE TABLE `pay_order` (
   `complete_time` datetime DEFAULT NULL,
   `order_no` varchar(45) DEFAULT NULL,
   PRIMARY KEY (`order_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=41 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -117,7 +115,7 @@ DROP TABLE IF EXISTS `sms_code`;
 CREATE TABLE `sms_code` (
   `telephone` bigint(20) NOT NULL,
   `code` int(11) DEFAULT NULL,
-  `ttl` bigint(20) DEFAULT NULL,
+  `expire_time` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`telephone`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -132,7 +130,7 @@ DROP TABLE IF EXISTS `token`;
 CREATE TABLE `token` (
   `user_id` bigint(20) NOT NULL,
   `token` varchar(45) DEFAULT NULL,
-  `ttl` bigint(20) DEFAULT NULL,
+  `expire_time` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -170,4 +168,4 @@ CREATE TABLE `user` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2017-11-23 15:14:44
+-- Dump completed on 2017-12-06 11:50:16
