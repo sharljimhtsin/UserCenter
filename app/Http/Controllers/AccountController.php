@@ -165,11 +165,11 @@ class AccountController extends Controller
         $userObj = $userResult->toArray();
         if (empty($userObj)) {
             $userObj["user_id"] = $accountObj["union_user_id"];
-            $userObj["nickname"] = "游客" . $accountObj["union_user_id"];
-            $userObj["avatar"] = "";
+            $userObj["nickname"] = "游客_" . $accountObj["union_user_id"];
+            $userObj["avatar"] = "http://api.playsm.com/resource/img/avator.png";
             $userObj["birthday"] = date("Y-m-d H:i:s", strtotime("2000-01-01"));
             $userObj["sex"] = User::SEX_MALE;
-            $userObj["signature"] = "签名为空";
+            $userObj["signature"] = "这家伙很萌,什么也没留下";
             $userObj["role"] = User::NORMAL_ROLE;
             $userObj["status"] = User::NORMAL_STATUS;
             $userResult->fill($userObj);
@@ -305,11 +305,11 @@ class AccountController extends Controller
                 $accountObj = $accountResult->toArray();
                 $userResult = User::query()->create(["user_id" => $user_id]);
                 $userObj = $userResult->toArray();
-                $userObj["nickname"] = "用户" . $user_id;
-                $userObj["avatar"] = "";
+                $userObj["nickname"] = "用户_" . $user_id;
+                $userObj["avatar"] = "http://api.playsm.com/resource/img/avator.png";
                 $userObj["birthday"] = date("Y-m-d H:i:s", strtotime("2000-01-01"));
                 $userObj["sex"] = User::SEX_MALE;
-                $userObj["signature"] = "签名为空";
+                $userObj["signature"] = "这家伙很萌,什么也没留下";
                 $userObj["role"] = User::NORMAL_ROLE;
                 $userObj["status"] = User::NORMAL_STATUS;
                 $userResult->fill($userObj);
