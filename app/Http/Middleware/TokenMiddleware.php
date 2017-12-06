@@ -31,6 +31,9 @@ class TokenMiddleware
             if ($token != $tokenObj["token"]) {
                 return \response()->json(["error" => "token error"]);
             }
+            if (time() > $tokenObj["expire_time"]) {
+                return \response()->json(["error" => "token expired"]);
+            }
         } else {
             return \response()->json(["error" => "token error"]);
         }
