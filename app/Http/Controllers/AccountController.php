@@ -25,7 +25,7 @@ class AccountController extends Controller
      */
     public function __construct()
     {
-        $this->middleware("token", ["only" => ["index", "sendSmsCode", "bindPhone", "modifyPassword"]]);
+        $this->middleware("token", ["only" => ["index", "sendSmsCode", "verifyPhone", "modifyPassword"]]);
     }
 
     /**
@@ -79,9 +79,39 @@ class AccountController extends Controller
      *
      * 手机登录
      * 手机号 telephone
-     * 验证码 smsCode
+     * 密码 password
      */
     public function telephoneLogin(Request $request)
+    {
+        $this->validate($request, ["telephone" => "required", "password" => "required"]);
+        $telephone = $request->input("telephone", "qwerty");
+        $password = $request->input("password", "123456");
+        $result = Account::query()->where([["user_key", "=", $telephone], ["password", "=", md5($password)], ["account_type", "=", Account::TELEPHONE_LOGIN], ["status", "=", Account::NORMAL_STATUS]])->first();
+        if ($result) {
+            $accountObj = $result->toArray();
+            $userResult = User::query()->find($accountObj["union_user_id"]);
+            if ($userResult) {
+                $userObj = $userResult->toArray();
+                $tokenStr = $this->getRandomToken();
+                Token::query()->updateOrCreate(["user_id" => $userObj["user_id"]], ["user_id" => $userObj["user_id"], "token" => $tokenStr, "expire_time" => $this->getTokenTTLTime()]);
+                return response()->json(["token" => $tokenStr, "account" => $accountObj, "user" => $userObj]);
+            } else {
+                return response()->json(["error" => "user not exist"]);
+            }
+        } else {
+            return response()->json(["error" => "account not exist"]);
+        }
+    }
+
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     *
+     * 手机快速登录
+     * 手机号 telephone
+     * 验证码 smsCode
+     */
+    public function telephoneQuickLogin(Request $request)
     {
         $this->validate($request, ["telephone" => "required", "smsCode" => "required"]);
         $telephone = $request->input("telephone", "13800138000");
@@ -201,12 +231,12 @@ class AccountController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      *
-     * 绑定手机号
+     * 认证手机号（换绑专用）
      * telephone 手机号
      * smsCode 验证码
      * user_id 用户ID
      */
-    public function bindPhone(Request $request)
+    public function verifyPhone(Request $request)
     {
         $this->validate($request, ["telephone" => "required", "smsCode" => "required", "user_id" => "required"]);
         $telephone = $request->input("telephone", "13800138000");
@@ -215,8 +245,7 @@ class AccountController extends Controller
         $userResult = User::query()->find($user_id);
         if ($userResult) {
             $userObj = $userResult->toArray();
-            $telephoneExist = User::query()->where([["telephone", "=", $telephone], ["user_id", "!=", $user_id]])->count("user_id");
-            if (is_null($userObj["telephone"]) && $telephoneExist == 0) {
+            if ($telephone == $userObj["telephone"]) {
                 $smsCodeResult = SmsCode::query()->find($telephone);
                 if (is_null($smsCodeResult)) {
                     return response()->json(["error" => "smsCode error"]);
@@ -225,17 +254,107 @@ class AccountController extends Controller
                 if ($smsCode != $smsCodeObject["code"] || time() > $smsCodeObject["expire_time"]) {
                     return response()->json(["error" => "smsCode invalid"]);
                 }
-                $userObj["telephone"] = $telephone;
-                $userResult->fill($userObj)->save();
-                $accountResult = Account::query()->create(["user_key" => $telephone, "account_type" => Account::TELEPHONE_LOGIN, "union_user_id" => $user_id, "status" => Account::NORMAL_STATUS]);
-                // once telephone bind-ed,disable quick login of it
-                Account::query()->where([["union_user_id", "=", $user_id], ["account_type", "=", Account::TEMP_LOGIN]])->update(["status" => Account::DISABLE_STATUS]);
-                return response()->json(["account" => $accountResult->toArray()]);
+                // 存入 session tag 以便下一步操作
+                $request->session()->flash("reBind", 1);
+                return response()->json(["msg" => "OK", "code" => "0"]);
             } else {
                 return response()->json(["error" => "telephone error"]);
             }
         } else {
             return response()->json(["error" => "user not exist"]);
+        }
+    }
+
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     *
+     * 绑定手机号
+     * telephone 手机号
+     * smsCode 验证码
+     * user_id 用户ID
+     */
+    public function bindPhone(Request $request)
+    {
+        $telephone = $request->input("telephone", "13800138000");
+        $smsCode = $request->input("smsCode", "0000");
+        $password = $request->input("password", "0000");
+        $user_id = $request->input("user_id", "9138");
+        //注册
+        if (!$request->has("user_id")) {
+            $this->validate($request, ["telephone" => "required", "smsCode" => "required", "password" => "required"]);
+            $telephoneExist = User::query()->where([["telephone", "=", $telephone]])->count("user_id");
+            if ($telephoneExist > 0) {
+                return response()->json(["error" => "telephone exist"]);
+            }
+            $smsCodeResult = SmsCode::query()->find($telephone);
+            if (is_null($smsCodeResult)) {
+                return response()->json(["error" => "smsCode error"]);
+            }
+            $smsCodeObject = $smsCodeResult->toArray();
+            if ($smsCode != $smsCodeObject["code"] || time() > $smsCodeObject["expire_time"]) {
+                return response()->json(["error" => "smsCode invalid"]);
+            }
+            $result = Account::getQuery()->where([["user_key", "=", $telephone], ["account_type", "=", Account::TELEPHONE_LOGIN], ["status", "=", Account::NORMAL_STATUS]])->first();
+            if ($result) {
+                return response()->json(["error" => "account exist"]);
+            } else {
+                $user_id = $this->genUserUid();
+                $accountResult = Account::query()->create(["user_key" => $telephone, "password" => md5($password), "account_type" => Account::TELEPHONE_LOGIN, "union_user_id" => $user_id, "status" => Account::NORMAL_STATUS]);
+                $accountObj = $accountResult->toArray();
+                $userResult = User::query()->create(["user_id" => $user_id]);
+                $userObj = $userResult->toArray();
+                $userObj["nickname"] = "用户" . $user_id;
+                $userObj["avatar"] = "";
+                $userObj["birthday"] = date("Y-m-d H:i:s", strtotime("2000-01-01"));
+                $userObj["sex"] = User::SEX_MALE;
+                $userObj["signature"] = "签名为空";
+                $userObj["role"] = User::NORMAL_ROLE;
+                $userObj["status"] = User::NORMAL_STATUS;
+                $userResult->fill($userObj);
+                $userResult->save();
+                $tokenStr = $this->getRandomToken();
+                Token::query()->updateOrCreate(["user_id" => $userObj["user_id"]], ["user_id" => $userObj["user_id"], "token" => $tokenStr, "expire_time" => $this->getTokenTTLTime()]);
+                return response()->json(["token" => $tokenStr, "account" => $accountObj, "user" => $userObj]);
+            }
+        } else {
+            //绑定、换绑手机号
+            if (is_null($request->user())) {
+                return response()->json(["error" => "user_id null"]);
+            }
+            if ($request->session()->has("reBind")) {
+                $reBind = true;
+                $this->validate($request, ["telephone" => "required", "smsCode" => "required"]);
+            } else {
+                $reBind = false;
+                $this->validate($request, ["telephone" => "required", "smsCode" => "required", "password" => "required"]);
+            }
+            $userResult = User::query()->find($user_id);
+            if ($userResult) {
+                $userObj = $userResult->toArray();
+                $notBind = is_null($userObj["telephone"]);
+                $telephoneExist = User::query()->where([["telephone", "=", $telephone], ["user_id", "!=", $user_id]])->count("user_id");
+                if (($notBind || (!$notBind && $reBind)) && $telephoneExist == 0) {
+                    $smsCodeResult = SmsCode::query()->find($telephone);
+                    if (is_null($smsCodeResult)) {
+                        return response()->json(["error" => "smsCode error"]);
+                    }
+                    $smsCodeObject = $smsCodeResult->toArray();
+                    if ($smsCode != $smsCodeObject["code"] || time() > $smsCodeObject["expire_time"]) {
+                        return response()->json(["error" => "smsCode invalid"]);
+                    }
+                    $userObj["telephone"] = $telephone;
+                    $userResult->fill($userObj)->save();
+                    $accountResult = Account::query()->create(["user_key" => $telephone, "password" => md5($password), "account_type" => Account::TELEPHONE_LOGIN, "union_user_id" => $user_id, "status" => Account::NORMAL_STATUS]);
+                    // once telephone bind-ed,disable quick login of it
+                    Account::query()->where([["union_user_id", "=", $user_id], ["account_type", "=", Account::TEMP_LOGIN]])->update(["status" => Account::DISABLE_STATUS]);
+                    return response()->json(["account" => $accountResult->toArray()]);
+                } else {
+                    return response()->json(["error" => "telephone error"]);
+                }
+            } else {
+                return response()->json(["error" => "user not exist"]);
+            }
         }
     }
 
