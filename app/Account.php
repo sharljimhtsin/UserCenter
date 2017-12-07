@@ -75,7 +75,7 @@ class Account extends Model implements MultiDB
      *
      * @var array
      */
-    protected $hidden = [];
+    protected $hidden = ['password'];
 
     static $dbPool = array();
 

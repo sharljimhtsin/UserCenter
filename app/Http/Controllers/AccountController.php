@@ -432,18 +432,14 @@ class AccountController extends Controller
         $user_id = $request->input("user_id", "0000");
         $oldPassword = $request->input("oldPassword", "4321");
         $newPassword = $request->input("newPassword", "1234");
-        $accountResult = Account::query()->where([["union_user_id", "=", $user_id], ["account_type", "=", Account::TELEPHONE_LOGIN], ["status", "=", Account::NORMAL_STATUS]])->first();
+        $accountResult = Account::query()->where([["union_user_id", "=", $user_id], ["account_type", "=", Account::TELEPHONE_LOGIN], ["password", "=", md5($oldPassword)], ["status", "=", Account::NORMAL_STATUS]])->first();
         if (is_null($accountResult)) {
-            return response()->json(["error" => "account not exist"]);
+            return response()->json(["error" => "account not exist or password not match"]);
         }
         $accountObj = $accountResult->toArray();
-        if (is_null($accountObj["password"]) || md5($oldPassword) == $accountObj["password"]) {
-            $accountObj["password"] = md5($newPassword);
-            $accountResult->fill($accountObj)->save();
-            return response()->json(["account" => $accountObj]);
-        } else {
-            return response()->json(["error" => "password not match"]);
-        }
+        $accountObj["password"] = md5($newPassword);
+        $accountResult->fill($accountObj)->save();
+        return response()->json(["account" => $accountObj]);
     }
 
     /**
