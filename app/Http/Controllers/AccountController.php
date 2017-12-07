@@ -99,7 +99,7 @@ class AccountController extends Controller
                 return response()->json(["error" => "user not exist"]);
             }
         } else {
-            return response()->json(["error" => "account not exist"]);
+            return response()->json(["error" => "account not exist or password error"]);
         }
     }
 
