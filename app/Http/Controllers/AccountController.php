@@ -69,7 +69,7 @@ class AccountController extends Controller
                 return response()->json(["error" => "user not exist"]);
             }
         } else {
-            return response()->json(["error" => "account not exist"]);
+            return response()->json(["error" => "account not exist or password error"]);
         }
     }
 
@@ -432,7 +432,7 @@ class AccountController extends Controller
         $user_id = $request->input("user_id", "0000");
         $oldPassword = $request->input("oldPassword", "4321");
         $newPassword = $request->input("newPassword", "1234");
-        $accountResult = Account::query()->where([["union_user_id", "=", $user_id], ["account_type", "=", Account::NORMAL_LOGIN], ["status", "=", Account::NORMAL_STATUS]])->first();
+        $accountResult = Account::query()->where([["union_user_id", "=", $user_id], ["account_type", "=", Account::TELEPHONE_LOGIN], ["status", "=", Account::NORMAL_STATUS]])->first();
         if (is_null($accountResult)) {
             return response()->json(["error" => "account not exist"]);
         }
@@ -478,7 +478,7 @@ class AccountController extends Controller
         if (is_null($accountObj["union_user_id"])) {
             return response()->json(["error" => "account error"]);
         }
-        $modifyResult = Account::query()->where([["union_user_id", "=", $accountObj["union_user_id"]], ["account_type", "=", Account::NORMAL_LOGIN], ["status", "=", Account::NORMAL_STATUS]])->first();
+        $modifyResult = Account::query()->where([["union_user_id", "=", $accountObj["union_user_id"]], ["account_type", "=", Account::TELEPHONE_LOGIN], ["status", "=", Account::NORMAL_STATUS]])->first();
         if ($modifyResult) {
             $modifyObj = $modifyResult->toArray();
             $modifyObj["password"] = md5($newPassword);
