@@ -26,6 +26,7 @@ $app = new Laravel\Lumen\Application(
 $app->withFacades();
 $app->withEloquent();
 $app->configure("alipay");
+session_start();//开启SESSION
 
 /*
 |--------------------------------------------------------------------------

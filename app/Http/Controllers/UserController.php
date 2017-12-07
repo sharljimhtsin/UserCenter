@@ -47,6 +47,7 @@ class UserController extends Controller
      */
     public function updateInfo(Request $request)
     {
+        $this->validate($request, ["birthday" => "nullable|date"]);
         $user_id = $request->input("user_id");
         $nickname = $request->input("nickname", null);
         $avatar = $request->input("avatar", null);
