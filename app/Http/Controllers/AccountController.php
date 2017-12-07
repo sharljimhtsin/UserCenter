@@ -53,7 +53,7 @@ class AccountController extends Controller
      */
     public function login(Request $request)
     {
-        $this->validate($request, ["user_key" => "required", "password" => "required"]);
+        $this->validate($request, ["user_key" => "required", "password" => "required|alpha_num|alpha_dash|min:6"]);
         $user_key = $request->input("user_key", "qwerty");
         $password = $request->input("password", "123456");
         $result = Account::query()->where([["user_key", "=", $user_key], ["password", "=", md5($password)], ["account_type", "=", Account::NORMAL_LOGIN], ["status", "=", Account::NORMAL_STATUS]])->first();
@@ -83,7 +83,7 @@ class AccountController extends Controller
      */
     public function telephoneLogin(Request $request)
     {
-        $this->validate($request, ["telephone" => ["required", "regex:/^((\d3)|(\d{3}\-))?13[0-9]\d{8}|15[89]\d{8}|18[0-9]\d{8}/"], "password" => "required"]);
+        $this->validate($request, ["telephone" => ["required", "regex:/^((\d3)|(\d{3}\-))?13[0-9]\d{8}|15[89]\d{8}|18[0-9]\d{8}/"], "password" => "required|alpha_num|alpha_dash|min:6"]);
         $telephone = $request->input("telephone", "qwerty");
         $password = $request->input("password", "123456");
         $result = Account::query()->where([["user_key", "=", $telephone], ["password", "=", md5($password)], ["account_type", "=", Account::TELEPHONE_LOGIN], ["status", "=", Account::NORMAL_STATUS]])->first();
@@ -398,7 +398,7 @@ class AccountController extends Controller
      */
     public function register(Request $request)
     {
-        $this->validate($request, ["user_key" => "required", "password" => "required"]);
+        $this->validate($request, ["user_key" => "required", "password" => "required|alpha_num|alpha_dash|min:6"]);
         $user_key = $request->input("user_key", "qwerty");
         $password = $request->input("password", "123456");
         $result = Account::getQuery()->where([["user_key", "=", $user_key], ["account_type", "=", Account::NORMAL_LOGIN], ["status", "=", Account::NORMAL_STATUS]])->first();
@@ -428,7 +428,7 @@ class AccountController extends Controller
      */
     public function modifyPassword(Request $request)
     {
-        $this->validate($request, ["user_id" => "required", "oldPassword" => "required", "newPassword" => "required"]);
+        $this->validate($request, ["user_id" => "required", "oldPassword" => "required|alpha_num|alpha_dash|min:6", "newPassword" => "required|alpha_num|alpha_dash|min:6"]);
         $user_id = $request->input("user_id", "0000");
         $oldPassword = $request->input("oldPassword", "4321");
         $newPassword = $request->input("newPassword", "1234");
@@ -458,7 +458,7 @@ class AccountController extends Controller
      */
     public function resetPassword(Request $request)
     {
-        $this->validate($request, ["telephone" => ["required", "regex:/^((\d3)|(\d{3}\-))?13[0-9]\d{8}|15[89]\d{8}|18[0-9]\d{8}/"], "smsCode" => "required", "newPassword" => "required"]);
+        $this->validate($request, ["telephone" => ["required", "regex:/^((\d3)|(\d{3}\-))?13[0-9]\d{8}|15[89]\d{8}|18[0-9]\d{8}/"], "smsCode" => "required", "newPassword" => "required|alpha_num|alpha_dash|min:6"]);
         $telephone = $request->input("telephone", "13800138000");
         $smsCode = $request->input("smsCode", "0000");
         $newPassword = $request->input("newPassword", "1234");
