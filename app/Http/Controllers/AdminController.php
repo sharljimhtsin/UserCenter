@@ -11,6 +11,7 @@ namespace App\Http\Controllers;
 
 use App\Account;
 use App\Channel;
+use App\Lib\Utils;
 use App\PayOrder;
 use App\User;
 use Illuminate\Http\Request;
@@ -38,10 +39,10 @@ class AdminController extends Controller
          */
         $userResult = $request->user();
         if (is_null($userResult)) {
-            return response()->json(["error" => "user not exist"]);
+            return Utils::echoContent(Utils::CODE_USER_NOT_EXIST);
         } else {
             $userObj = $userResult->toArray();
-            return response()->json(["user" => $userObj]);
+            return Utils::echoContent(Utils::CODE_OK, ["user" => $userObj]);
         }
     }
 
@@ -55,9 +56,9 @@ class AdminController extends Controller
         $limit = $request->input("limit", 20);
         $result = Channel::getQuery()->get()->forPage($page, $limit);
         if (is_null($result)) {
-            return response()->json(["error" => "no data"]);
+            return Utils::echoContent(Utils::CODE_NO_DATA);
         } else {
-            return response()->json(["list" => $result->toArray()]);
+            return Utils::echoContent(Utils::CODE_OK, ["list" => $result->toArray()]);
         }
     }
 
@@ -71,9 +72,9 @@ class AdminController extends Controller
         $limit = $request->input("limit", 20);
         $result = User::query()->get()->forPage($page, $limit);
         if (is_null($result)) {
-            return response()->json(["error" => "no data"]);
+            return Utils::echoContent(Utils::CODE_NO_DATA);
         } else {
-            return response()->json(["list" => $result->toArray()]);
+            return Utils::echoContent(Utils::CODE_OK, ["list" => $result->toArray()]);
         }
     }
 
@@ -87,9 +88,9 @@ class AdminController extends Controller
         $limit = $request->input("limit", 20);
         $result = Account::getQuery()->get()->forPage($page, $limit);
         if (is_null($result)) {
-            return response()->json(["error" => "no data"]);
+            return Utils::echoContent(Utils::CODE_NO_DATA);
         } else {
-            return response()->json(["list" => $result->toArray()]);
+            return Utils::echoContent(Utils::CODE_OK, ["list" => $result->toArray()]);
         }
     }
 
@@ -103,9 +104,9 @@ class AdminController extends Controller
         $limit = $request->input("limit", 20);
         $result = PayOrder::getQuery()->get()->forPage($page, $limit);
         if (is_null($result)) {
-            return response()->json(["error" => "no data"]);
+            return Utils::echoContent(Utils::CODE_NO_DATA);
         } else {
-            return response()->json(["list" => $result->toArray()]);
+            return Utils::echoContent(Utils::CODE_OK, ["list" => $result->toArray()]);
         }
     }
 
@@ -115,21 +116,19 @@ class AdminController extends Controller
      */
     public function approveChannel(Request $request)
     {
+        $this->validate($request, ["channel_id" => "required"]);
         $channel_id = $request->input("channel_id", null);
-        if (is_null($channel_id)) {
-            return response()->json(["error" => "param error"]);
-        }
         $result = Channel::getQuery()->find($channel_id);
         if (is_null($result)) {
-            return response()->json(["error" => "channel not exist"]);
+            return Utils::echoContent(Utils::CODE_CHANNEL_NOT_EXIST);
         } else {
             $obj = $result->toArray();
             if ($obj["is_test"] == 0) {
-                return response()->json(["error" => "channel already approved"]);
+                return Utils::echoContent(Utils::CODE_CHANNEL_ALREADY_APPROVED);
             }
             $obj["is_test"] = 0;
             $result->fill($obj)->save();
-            return response()->json(["status" => "ok"]);
+            return Utils::echoContent(Utils::CODE_OK);
         }
     }
 }

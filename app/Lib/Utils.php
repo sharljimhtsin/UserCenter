@@ -30,6 +30,9 @@ class Utils
     const CODE_TOKEN_NULL = 16;
     const CODE_USER_ID_NULL = 17;
     const CODE_ACCOUNT_PASSWORD_ERROR = 18;
+    const CODE_CHANNEL_EXIST = 19;
+    const CODE_NO_DATA = 20;
+    const CODE_CHANNEL_ALREADY_APPROVED = 21;
 
 
     const CODE_MAP = [
@@ -52,6 +55,9 @@ class Utils
         Utils::CODE_TOKEN_NULL => "token 为空",
         Utils::CODE_USER_ID_NULL => "user_id 为空",
         Utils::CODE_ACCOUNT_PASSWORD_ERROR => "密码错误",
+        Utils::CODE_CHANNEL_EXIST => "渠道已存在",
+        Utils::CODE_NO_DATA => "无数据",
+        Utils::CODE_CHANNEL_ALREADY_APPROVED => "渠道已经过审",
     ];
 
     static function echoContent($code, $data = null)

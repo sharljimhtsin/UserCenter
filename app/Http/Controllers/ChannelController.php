@@ -10,6 +10,7 @@ namespace App\Http\Controllers;
 
 
 use App\Channel;
+use App\Lib\Utils;
 use App\User;
 use Illuminate\Http\Request;
 
@@ -35,10 +36,10 @@ class ChannelController extends Controller
          */
         $userResult = $request->user();
         if (is_null($userResult)) {
-            return response()->json(["error" => "user not exist"]);
+            return Utils::echoContent(Utils::CODE_USER_NOT_EXIST);
         } else {
             $userObj = $userResult->toArray();
-            return response()->json(["user" => $userObj]);
+            return Utils::echoContent(Utils::CODE_OK, ["user" => $userObj]);
         }
     }
 
@@ -63,21 +64,19 @@ class ChannelController extends Controller
      */
     public function add(Request $request)
     {
+        $this->validate($request, ["channel_name" => "required", "pay_callback_url" => "required", "alias" => "required"]);
         $user_id = $request->input("user_id");
         $channel_name = $request->input("channel_name");
         $pay_callback_url = $request->input("pay_callback_url");
         $alias = $request->input("alias", "mysql");
-        if (is_null($channel_name) || is_null($pay_callback_url) || is_null($alias)) {
-            return response()->json(["error" => "param error"]);
-        }
         $result = Channel::getQuery()->where([["channel_name", "=", $channel_name], ["owner", "=", $user_id]])->orWhere("alias", "=", $alias)->first();
         if ($result) {
-            return response()->json(["error" => "channel exist"]);
+            return Utils::echoContent(Utils::CODE_CHANNEL_EXIST);
         } else {
             $channel_key = $this->getUniqueStr("K");
             $channel_secret = $this->getUniqueStr("S");
             $addResult = Channel::getQuery()->create(["channel_name" => $channel_name, "channel_key" => $channel_key, "channel_secret" => $channel_secret, "pay_callback_url" => $pay_callback_url, "is_test" => 1, "owner" => $user_id, "alias" => $alias]);
-            return response()->json(["channel" => $addResult->toArray()]);
+            return Utils::echoContent(Utils::CODE_OK, ["channel" => $addResult->toArray()]);
         }
     }
 
@@ -87,20 +86,18 @@ class ChannelController extends Controller
      */
     public function update(Request $request)
     {
+        $this->validate($request, ["channel_id" => "required", "pay_callback_url" => "required"]);
         $user_id = $request->input("user_id");
         $channel_id = $request->input("channel_id");
         $pay_callback_url = $request->input("pay_callback_url");
-        if (is_null($channel_id) || is_null($pay_callback_url)) {
-            return response()->json(["error" => "param error"]);
-        }
         $result = Channel::getQuery()->where([["channel_id", "=", $channel_id], ["owner", "=", $user_id]])->first();
         if ($result) {
             $obj = $result->toArray();
             $obj["pay_callback_url"] = $pay_callback_url ? $pay_callback_url : $obj["pay_callback_url"];
             $result->fill($obj)->save();
-            return response()->json(["channel" => $obj]);
+            return Utils::echoContent(Utils::CODE_OK, ["channel" => $obj]);
         } else {
-            return response()->json(["error" => "channel not exist"]);
+            return Utils::echoContent(Utils::CODE_CHANNEL_NOT_EXIST);
         }
     }
 
@@ -110,17 +107,15 @@ class ChannelController extends Controller
      */
     public function delete(Request $request)
     {
+        $this->validate($request, ["channel_id" => "required"]);
         $user_id = $request->input("user_id");
         $channel_id = $request->input("channel_id");
-        if (is_null($channel_id)) {
-            return response()->json(["error" => "param error"]);
-        }
         $result = Channel::getQuery()->where([["channel_id", "=", $channel_id], ["owner", "=", $user_id]])->first();
         if ($result) {
             $result->delete();
-            return response()->json(["status" => "ok"]);
+            return Utils::echoContent(Utils::CODE_OK);
         } else {
-            return response()->json(["error" => "channel not exist"]);
+            return Utils::echoContent(Utils::CODE_CHANNEL_NOT_EXIST);
         }
     }
 
@@ -132,6 +127,6 @@ class ChannelController extends Controller
     {
         $user_id = $request->input("user_id");
         $result = Channel::getQuery()->where([["owner", "=", $user_id]])->get();
-        return response()->json(["channelList" => $result->toArray()]);
+        return Utils::echoContent(Utils::CODE_OK, ["channelList" => $result->toArray()]);
     }
 }

@@ -9,6 +9,7 @@
 namespace App\Http\Controllers;
 
 
+use App\Lib\Utils;
 use App\User;
 use Illuminate\Http\Request;
 
@@ -34,10 +35,10 @@ class UserController extends Controller
          */
         $userResult = $request->user();
         if (is_null($userResult)) {
-            return response()->json(["error" => "user not exist"]);
+            return Utils::echoContent(Utils::CODE_USER_NOT_EXIST);
         } else {
             $userObj = $userResult->toArray();
-            return response()->json(["user" => $userObj]);
+            return Utils::echoContent(Utils::CODE_OK, ["user" => $userObj]);
         }
     }
 
@@ -56,7 +57,7 @@ class UserController extends Controller
         $signature = $request->input("signature", null);
         $result = User::getQuery()->find($user_id);
         if (is_null($result)) {
-            return response()->json(["error" => "user not exist"]);
+            return Utils::echoContent(Utils::CODE_USER_NOT_EXIST);
         } else {
             $obj = $result->toArray();
             $obj["nickname"] = $nickname ? $nickname : $obj["nickname"];
@@ -65,7 +66,7 @@ class UserController extends Controller
             $obj["sex"] = $sex ? intval($sex) : $obj["sex"];
             $obj["signature"] = $signature ? $signature : $obj["signature"];
             $result->fill($obj)->save();
-            return response()->json(["user" => $obj]);
+            return Utils::echoContent(Utils::CODE_OK, ["user" => $obj]);
         }
     }
 
@@ -78,9 +79,9 @@ class UserController extends Controller
         $user_id = $request->input("user_id");
         $result = User::getQuery()->find($user_id);
         if (is_null($result)) {
-            return response()->json(["error" => "user not exist"]);
+            return Utils::echoContent(Utils::CODE_USER_NOT_EXIST);
         } else {
-            return response()->json(["user" => $result->toArray()]);
+            return Utils::echoContent(Utils::CODE_OK, ["user" => $result->toArray()]);
         }
     }
 }
