@@ -1,0 +1,65 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: Administrator
+ * Date: 2017/12/7
+ * Time: 15:48:02
+ */
+
+namespace App\Lib;
+
+
+class Utils
+{
+    const CODE_OK = 0;
+    const CODE_USER_NOT_EXIST = 1;
+    const CODE_ACCOUNT_NOT_EXIST_OR_PASSWORD_ERROR = 2;
+    const CODE_SMS_CODE_ERROR = 3;
+    const CODE_SMS_CODE_INVALID = 4;
+    const CODE_ACCOUNT_ERROR = 5;
+    const CODE_ACCOUNT_NOT_EXIST = 6;
+    const CODE_SMS_SEND_PER_ONE_MIN = 7;
+    const CODE_TELEPHONE_NOT_MATCH = 8;
+    const CODE_TELEPHONE_ERROR = 9;
+    const CODE_TELEPHONE_EXIST = 10;
+    const CODE_ACCOUNT_EXIST = 11;
+    const CODE_TOKEN_ERROR = 12;
+    const CODE_TOKEN_EXPIRED = 13;
+    const CODE_CHANNEL_NOT_EXIST = 14;
+    const CODE_SIGN_NOT_MATCH = 15;
+    const CODE_TOKEN_NULL = 16;
+    const CODE_USER_ID_NULL = 17;
+    const CODE_ACCOUNT_PASSWORD_ERROR = 18;
+
+
+    const CODE_MAP = [
+        Utils::CODE_OK => "OK",
+        Utils::CODE_USER_NOT_EXIST => "用户不存在",
+        Utils::CODE_ACCOUNT_NOT_EXIST_OR_PASSWORD_ERROR => "账号不存在或密码错误",
+        Utils::CODE_SMS_CODE_ERROR => "验证码错误",
+        Utils::CODE_SMS_CODE_INVALID => "验证码失效",
+        Utils::CODE_ACCOUNT_ERROR => "账号错误",
+        Utils::CODE_ACCOUNT_NOT_EXIST => "账号不存在",
+        Utils::CODE_SMS_SEND_PER_ONE_MIN => "验证码每分钟发送一次",
+        Utils::CODE_TELEPHONE_NOT_MATCH => "手机号不匹配",
+        Utils::CODE_TELEPHONE_ERROR => "手机号错误",
+        Utils::CODE_TELEPHONE_EXIST => "手机号已存在",
+        Utils::CODE_ACCOUNT_EXIST => "账号已存在",
+        Utils::CODE_TOKEN_ERROR => "token 错误",
+        Utils::CODE_TOKEN_EXPIRED => "token 过期",
+        Utils::CODE_CHANNEL_NOT_EXIST => "渠道不存在",
+        Utils::CODE_SIGN_NOT_MATCH => "签名不匹配",
+        Utils::CODE_TOKEN_NULL => "token 为空",
+        Utils::CODE_USER_ID_NULL => "user_id 为空",
+        Utils::CODE_ACCOUNT_PASSWORD_ERROR => "密码错误",
+    ];
+
+    static function echoContent($code, $data = null)
+    {
+        $arr = [];
+        $arr["code"] = $code;
+        $arr["message"] = array_key_exists($code, Utils::CODE_MAP) ? Utils::CODE_MAP[$code] : "unknown";
+        $arr["data"] = $data;
+        return response()->json($arr);
+    }
+}

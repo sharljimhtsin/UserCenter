@@ -8,6 +8,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Lib\Utils;
 use App\Token;
 use Illuminate\Http\Request;
 use Closure;
@@ -18,10 +19,10 @@ class TokenMiddleware
     public function handle(Request $request, Closure $next)
     {
         if (!$request->exists("token")) {
-            return \response()->json(["error" => "token null"]);
+            return Utils::echoContent(Utils::CODE_TOKEN_NULL);
         }
         if (!$request->exists("user_id")) {
-            return \response()->json(["error" => "user_id null"]);
+            return Utils::echoContent(Utils::CODE_USER_ID_NULL);
         }
         $token = $request->input("token");
         $user_id = $request->input("user_id");
@@ -29,13 +30,13 @@ class TokenMiddleware
         if ($tokenResult) {
             $tokenObj = $tokenResult->toArray();
             if ($token != $tokenObj["token"]) {
-                return \response()->json(["error" => "token error"]);
+                return Utils::echoContent(Utils::CODE_TOKEN_ERROR);
             }
             if (time() > $tokenObj["expire_time"]) {
-                return \response()->json(["error" => "token expired"]);
+                return Utils::echoContent(Utils::CODE_TOKEN_EXPIRED);
             }
         } else {
-            return \response()->json(["error" => "token error"]);
+            return Utils::echoContent(Utils::CODE_TOKEN_ERROR);
         }
         return $next($request);
     }

@@ -9,6 +9,7 @@
 namespace App\Http\Middleware;
 
 
+use App\Lib\Utils;
 use Illuminate\Http\Request;
 use Closure;
 use Illuminate\Http\Response;
@@ -18,7 +19,7 @@ class UserMiddleware
     public function handle(Request $request, Closure $next)
     {
         if (!$request->exists("user_id")) {
-            return \response()->json(["error" => "user_id null"]);
+            return Utils::echoContent(Utils::CODE_USER_ID_NULL);
         }
         return $next($request);
     }
