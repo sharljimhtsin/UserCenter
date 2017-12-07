@@ -444,6 +444,7 @@ class AccountController extends Controller
         $accountObj = $accountResult->toArray();
         $accountObj["password"] = md5($newPassword);
         $accountResult->fill($accountObj)->save();
+        unset($accountObj["password"]);//密码保密
         return Utils::echoContent(Utils::CODE_OK, ["account" => $accountObj]);
     }
 
@@ -484,6 +485,7 @@ class AccountController extends Controller
             $modifyObj = $modifyResult->toArray();
             $modifyObj["password"] = md5($newPassword);
             $modifyResult->fill($modifyObj)->save();
+            unset($modifyObj["password"]);//密码保密
             return Utils::echoContent(Utils::CODE_OK, ["account" => $modifyObj]);
         } else {
             return Utils::echoContent(Utils::CODE_ACCOUNT_NOT_EXIST);
