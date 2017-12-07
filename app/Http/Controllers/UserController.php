@@ -48,21 +48,21 @@ class UserController extends Controller
     public function updateInfo(Request $request)
     {
         $user_id = $request->input("user_id");
-        $nickname = $request->input("nickname");
-        $avatar = $request->input("avatar");
-        $birthday = $request->input("birthday");
-        $sex = $request->input("sex");
-        $signature = $request->input("signature");
+        $nickname = $request->input("nickname", null);
+        $avatar = $request->input("avatar", null);
+        $birthday = $request->input("birthday", null);
+        $sex = $request->input("sex", null);
+        $signature = $request->input("signature", null);
         $result = User::getQuery()->find($user_id);
         if (is_null($result)) {
             return response()->json(["error" => "user not exist"]);
         } else {
             $obj = $result->toArray();
-            $obj["nickname"] = $nickname;
-            $obj["avatar"] = $avatar;
-            $obj["birthday"] = $birthday;
-            $obj["sex"] = $sex;
-            $obj["signature"] = $signature;
+            $obj["nickname"] = $nickname ? $nickname : $obj["nickname"];
+            $obj["avatar"] = $avatar ? $avatar : $obj["avatar"];
+            $obj["birthday"] = $birthday ? $birthday : $obj["birthday"];
+            $obj["sex"] = $sex ? intval($sex) : $obj["sex"];
+            $obj["signature"] = $signature ? $signature : $obj["signature"];
             $result->fill($obj)->save();
             return response()->json(["user" => $obj]);
         }
