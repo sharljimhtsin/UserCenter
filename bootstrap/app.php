@@ -60,9 +60,10 @@ $app->singleton(
 |
 */
 
-// $app->middleware([
+$app->middleware([
+    App\Http\Middleware\CrossMiddleware::class
 //    App\Http\Middleware\ExampleMiddleware::class
-// ]);
+]);
 
 $app->routeMiddleware([
     'user' => App\Http\Middleware\UserMiddleware::class,
@@ -87,6 +88,7 @@ $app->routeMiddleware([
 
 $app->register(App\Providers\AuthServiceProvider::class);
 $app->register(Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider::class);
+$app->register(App\Providers\CatchAllOptionsRequestsProvider::class);
 
 /*
 |--------------------------------------------------------------------------
