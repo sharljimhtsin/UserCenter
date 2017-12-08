@@ -49,6 +49,7 @@ class Account extends Model implements MultiDB
     const QQ_LOGIN = 2;
     const WECHAT_LOGIN = 3;
     const WEIBO_LOGIN = 4;
+    const MAIMENG_LOGIN = 5;
 
     // account status type
     const NORMAL_STATUS = 1;

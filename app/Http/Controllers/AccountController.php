@@ -12,6 +12,8 @@ namespace App\Http\Controllers;
 use App\Account;
 use App\Channel;
 use App\Lib\Utils;
+use App\MaimengAccount;
+use App\MaimengUser;
 use App\Mapping;
 use App\SmsCode;
 use App\Token;
@@ -75,6 +77,43 @@ class AccountController extends Controller
     }
 
     /**
+     * @param $username
+     * @param $password
+     * @return array|null
+     *
+     * 尝试登录maimeng 账号
+     */
+    private function tryMaimengAccount($username, $password)
+    {
+        $accountResult = MaimengAccount::getQuery()->where([["username", "=", $username], ["password", "=", $this->encryptPassword($password)], ["status", "=", "1"]])->first();
+        if (is_null($accountResult)) {
+            return null;
+        }
+        $accountObj = $accountResult->toArray();
+        $userResult = MaimengUser::getQuery()->find($accountObj["unionId"]);
+        if (is_null($userResult)) {
+            return null;
+        }
+        return [$accountObj, $userResult->toArray()];
+    }
+
+    /**
+     * @param string $password
+     * @return string
+     *
+     * maimeng 账号密码加密
+     */
+    private function encryptPassword($password = '')
+    {
+        if ($password == '') return '';
+
+        $password = trim($password);
+        $password = strval($password);
+        $password = md5($password);
+        return md5($password . '@' . mb_substr($password, 0, 12, 'utf8'));
+    }
+
+    /**
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      *
@@ -87,11 +126,35 @@ class AccountController extends Controller
         $this->validate($request, ["telephone" => ["required", "regex:/^((\d3)|(\d{3}\-))?13[0-9]\d{8}|15[89]\d{8}|18[0-9]\d{8}/"], "password" => "required|alpha_num|alpha_dash|min:6"]);
         $telephone = $request->input("telephone", "qwerty");
         $password = $request->input("password", "123456");
-        $existResult = Account::query()->where([["user_key", "=", $telephone], ["account_type", "=", Account::TELEPHONE_LOGIN], ["status", "=", Account::NORMAL_STATUS]])->exists();
+        $existResult = Account::query()->where([["user_key", "=", $telephone], ["status", "=", Account::NORMAL_STATUS]])->whereIn("account_type", [Account::TELEPHONE_LOGIN, Account::MAIMENG_LOGIN])->exists();
         if (!$existResult) {
-            return Utils::echoContent(Utils::CODE_ACCOUNT_NOT_EXIST);
+            $loginData = $this->tryMaimengAccount($telephone, $password);
+            if (is_null($loginData)) {
+                return Utils::echoContent(Utils::CODE_ACCOUNT_NOT_EXIST);
+            }
+            $accountMaiMeng = $loginData[0];
+            $userMaiMeng = $loginData[1];
+            $user_id = $this->genUserUid();
+            $accountResult = Account::query()->create(["user_key" => $telephone, "password" => md5($password), "account_type" => Account::MAIMENG_LOGIN, "union_user_id" => $user_id, "status" => Account::NORMAL_STATUS]);
+            $accountObj = $accountResult->toArray();
+            $userResult = User::query()->create(["user_id" => $user_id, "status" => User::NORMAL_STATUS, "role" => User::NORMAL_ROLE]);
+            $userObj = $userResult->toArray();
+            $userObj["user_id"] = $accountObj["union_user_id"];
+            $userObj["nickname"] = "麦萌_" . $userMaiMeng["nickname"];
+            $userObj["avatar"] = $userMaiMeng["avatar"];
+            $userObj["birthday"] = $userMaiMeng["birthday"];
+            $userObj["sex"] = $userMaiMeng["sex"];
+            $userObj["signature"] = $userMaiMeng["signature"];
+            $userObj["role"] = User::NORMAL_ROLE;
+            $userObj["status"] = User::NORMAL_STATUS;
+            $userObj["user_source"] = "maimeng";
+            $userResult->fill($userObj);
+            $userResult->save();
+            $tokenStr = $this->getRandomToken();
+            Token::query()->updateOrCreate(["user_id" => $userObj["user_id"]], ["user_id" => $userObj["user_id"], "token" => $tokenStr, "expire_time" => $this->getTokenTTLTime()]);
+            return Utils::echoContent(Utils::CODE_OK, ["token" => $tokenStr, "account" => $accountObj, "user" => $userObj]);
         }
-        $result = Account::query()->where([["user_key", "=", $telephone], ["password", "=", md5($password)], ["account_type", "=", Account::TELEPHONE_LOGIN], ["status", "=", Account::NORMAL_STATUS]])->first();
+        $result = Account::query()->where([["user_key", "=", $telephone], ["password", "=", md5($password)], ["status", "=", Account::NORMAL_STATUS]])->whereIn("account_type", [Account::TELEPHONE_LOGIN, Account::MAIMENG_LOGIN])->first();
         if ($result) {
             $accountObj = $result->toArray();
             $userResult = User::query()->find($accountObj["union_user_id"]);
