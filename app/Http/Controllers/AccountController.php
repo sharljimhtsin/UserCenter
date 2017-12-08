@@ -320,6 +320,9 @@ class AccountController extends Controller
             }
             $result = Account::getQuery()->where([["user_key", "=", $telephone], ["account_type", "=", Account::TELEPHONE_LOGIN], ["status", "=", Account::NORMAL_STATUS]])->first();
             if ($result) {
+                $resultObj = $result->toArray();
+                $resultObj["password"] = md5($password);
+                $result->fill($resultObj)->save();
                 return Utils::echoContent(Utils::CODE_ACCOUNT_EXIST);
             } else {
                 $user_id = $this->genUserUid();
