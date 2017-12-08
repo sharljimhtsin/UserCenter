@@ -306,10 +306,10 @@ class AccountController extends Controller
         //注册
         if (!$request->has("user_id")) {
             $this->validate($request, ["telephone" => ["required", "regex:/^((\d3)|(\d{3}\-))?13[0-9]\d{8}|15[89]\d{8}|18[0-9]\d{8}/"], "smsCode" => "required", "password" => "required|alpha_num|alpha_dash|min:6"]);
-            $telephoneExist = User::query()->where([["telephone", "=", $telephone]])->count("user_id");
-            if ($telephoneExist > 0) {
-                return Utils::echoContent(Utils::CODE_TELEPHONE_EXIST);
-            }
+//            $telephoneExist = User::query()->where([["telephone", "=", $telephone]])->count("user_id");
+//            if ($telephoneExist > 0) {
+//                return Utils::echoContent(Utils::CODE_TELEPHONE_EXIST);
+//            }
             $smsCodeResult = SmsCode::query()->find($telephone);
             if (is_null($smsCodeResult)) {
                 return Utils::echoContent(Utils::CODE_SMS_CODE_ERROR);
@@ -323,7 +323,15 @@ class AccountController extends Controller
                 $resultObj = $result->toArray();
                 $resultObj["password"] = md5($password);
                 $result->fill($resultObj)->save();
-                return Utils::echoContent(Utils::CODE_ACCOUNT_EXIST);
+                unset($resultObj["password"]);
+                $userResult = User::getQuery()->find($resultObj["union_user_id"]);
+                if (is_null($userResult)) {
+                    return Utils::echoContent(Utils::CODE_USER_NOT_EXIST);
+                }
+                $userObj = $userResult->toArray();
+                $tokenStr = $this->getRandomToken();
+                Token::query()->updateOrCreate(["user_id" => $userObj["user_id"]], ["user_id" => $userObj["user_id"], "token" => $tokenStr, "expire_time" => $this->getTokenTTLTime()]);
+                return Utils::echoContent(Utils::CODE_OK, ["user" => $userObj, "account" => $resultObj, "token" => $tokenStr]);
             } else {
                 $user_id = $this->genUserUid();
                 $accountResult = Account::query()->create(["user_key" => $telephone, "password" => md5($password), "account_type" => Account::TELEPHONE_LOGIN, "union_user_id" => $user_id, "status" => Account::NORMAL_STATUS]);
