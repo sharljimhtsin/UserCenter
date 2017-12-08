@@ -497,7 +497,11 @@ class AccountController extends Controller
             $modifyObj["password"] = md5($newPassword);
             $modifyResult->fill($modifyObj)->save();
             unset($modifyObj["password"]);//密码保密
-            return Utils::echoContent(Utils::CODE_OK, ["account" => $modifyObj]);
+            $userResult = User::getQuery()->find($accountObj["union_user_id"]);
+            if (is_null($userResult)) {
+                return Utils::echoContent(Utils::CODE_USER_NOT_EXIST);
+            }
+            return Utils::echoContent(Utils::CODE_OK, ["account" => $modifyObj, "user" => $userResult->toArray()]);
         } else {
             return Utils::echoContent(Utils::CODE_ACCOUNT_NOT_EXIST);
         }
