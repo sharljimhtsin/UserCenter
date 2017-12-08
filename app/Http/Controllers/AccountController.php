@@ -20,6 +20,7 @@ use App\Token;
 use App\User;
 use App\Variable;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class AccountController extends Controller
 {
@@ -266,13 +267,13 @@ class AccountController extends Controller
     public function sendSmsCode(Request $request)
     {
         $this->validate($request, ["telephone" => ["required", "regex:/^((\d3)|(\d{3}\-))?13[0-9]\d{8}|15[89]\d{8}|18[0-9]\d{8}/"], "user_id" => "required"]);
-        $last_time = isset($_SESSION["SmsCd"]) ? $_SESSION["SmsCd"] : time();
-        if ($last_time > time()) {
+        $telephone = $request->input("telephone", "13800138000");
+        $keyLock = $telephone . "_SmsCd";
+        if (Cache::has($keyLock)) {
             return Utils::echoContent(Utils::CODE_SMS_SEND_PER_ONE_MIN);
         } else {
-            $_SESSION["SmsCd"] = time() + 60;// 1 min CDing
+            Cache::put($keyLock, time(), 1);// 1 min CDing
         }
-        $telephone = $request->input("telephone", "13800138000");
         $user_id = $request->input("user_id", "9138");
         $userResult = User::query()->find($user_id);
         if ($userResult) {
@@ -301,13 +302,13 @@ class AccountController extends Controller
     public function sendSmsCodeNoToken(Request $request)
     {
         $this->validate($request, ["telephone" => ["required", "regex:/^((\d3)|(\d{3}\-))?13[0-9]\d{8}|15[89]\d{8}|18[0-9]\d{8}/"]]);
-        $last_time = isset($_SESSION["SmsCd"]) ? $_SESSION["SmsCd"] : time();
-        if ($last_time > time()) {
+        $telephone = $request->input("telephone", "13800138000");
+        $keyLock = $telephone . "_SmsCd";
+        if (Cache::has($keyLock)) {
             return Utils::echoContent(Utils::CODE_SMS_SEND_PER_ONE_MIN);
         } else {
-            $_SESSION["SmsCd"] = time() + 60;// 1 min CDing
+            Cache::put($keyLock, time(), 1);// 1 min CDing
         }
-        $telephone = $request->input("telephone", "13800138000");
         $smsCodeStr = $this->genRandomSmsCode();
         SmsCode::query()->updateOrCreate(["telephone" => $telephone], ["telephone" => $telephone, "code" => $smsCodeStr, "expire_time" => $this->getSmsCodeTTLTime()]);
         return Utils::echoContent(Utils::CODE_OK, ["smsCode" => $smsCodeStr]);
@@ -340,8 +341,9 @@ class AccountController extends Controller
                 if ($smsCode != $smsCodeObject["code"] || time() > $smsCodeObject["expire_time"]) {
                     return Utils::echoContent(Utils::CODE_SMS_CODE_INVALID);
                 }
-                // 存入 session tag 以便下一步操作
-                $_SESSION["reBind"] = "1";
+                // 存入 cache tag 以便下一步操作
+                $keyReBind = $user_id . "reBind";
+                Cache::put($keyReBind, "1", 1);
                 return Utils::echoContent(Utils::CODE_OK);
             } else {
                 return Utils::echoContent(Utils::CODE_TELEPHONE_ERROR);
@@ -423,7 +425,8 @@ class AccountController extends Controller
             }
         } else {
             //绑定、换绑手机号
-            if (isset($_SESSION["reBind"])) {
+            $keyReBind = $user_id . "reBind";
+            if (Cache::has($keyReBind)) {
                 $reBind = true;
                 $this->validate($request, ["telephone" => ["required", "regex:/^((\d3)|(\d{3}\-))?13[0-9]\d{8}|15[89]\d{8}|18[0-9]\d{8}/"], "smsCode" => "required", "user_id" => "required", "token" => "required"]);
             } else {
@@ -461,8 +464,7 @@ class AccountController extends Controller
                     $accountResult = Account::query()->create(["user_key" => $telephone, "password" => md5($password), "account_type" => Account::TELEPHONE_LOGIN, "union_user_id" => $user_id, "status" => Account::NORMAL_STATUS]);
                     // once telephone bind-ed,disable quick login of it
                     Account::query()->where([["union_user_id", "=", $user_id], ["account_type", "=", Account::TEMP_LOGIN]])->update(["status" => Account::DISABLE_STATUS]);
-                    unset($_SESSION["reBind"]);
-                    return Utils::echoContent(Utils::CODE_OK, ["account" => $accountResult->toArray()]);
+                    return Utils::echoContent(Utils::CODE_OK, ["account" => $accountResult->toArray(), "user" => $userObj]);
                 } else {
                     return Utils::echoContent(Utils::CODE_TELEPHONE_ERROR);
                 }
