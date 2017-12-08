@@ -29,7 +29,7 @@ class AccountController extends Controller
      */
     public function __construct()
     {
-        $this->middleware("token", ["only" => ["index", "sendSmsCode", "verifyPhone", "modifyPassword"]]);
+        $this->middleware("token", ["only" => ["sendSmsCode", "verifyPhone", "modifyPassword"]]);
     }
 
     /**
@@ -38,7 +38,7 @@ class AccountController extends Controller
      */
     public function index(Request $request)
     {
-        $welcomeResult = Variable::getQuery()->where("name", "=", "welcome")->get();
+        $welcomeResult = Variable::getQuery()->where("name", "=", "welcome")->first();
         if (is_null($welcomeResult)) {
             return Utils::echoContent(Utils::CODE_OK, ["msg" => "欢迎"]);
         }
