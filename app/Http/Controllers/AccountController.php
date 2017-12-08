@@ -18,6 +18,7 @@ use App\Mapping;
 use App\SmsCode;
 use App\Token;
 use App\User;
+use App\Variable;
 use Illuminate\Http\Request;
 
 class AccountController extends Controller
@@ -37,7 +38,12 @@ class AccountController extends Controller
      */
     public function index(Request $request)
     {
-        return "OK";
+        $welcomeResult = Variable::getQuery()->where("name", "=", "welcome")->get();
+        if (is_null($welcomeResult)) {
+            return Utils::echoContent(Utils::CODE_OK, ["msg" => "欢迎"]);
+        }
+        $welcomeObj = $welcomeResult->toArray();
+        return Utils::echoContent(Utils::CODE_OK, ["msg" => $welcomeObj["value"]]);
     }
 
     private function getRandomToken($size = 10)
