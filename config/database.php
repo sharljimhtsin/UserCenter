@@ -25,10 +25,10 @@ return [
             'collation' => 'utf8_unicode_ci',
             'prefix' => '',
         ],
-        'caonima' => [
+        'maimeng' => [
             'driver' => 'mysql',
             'host' => getenv('DB_HOST'),
-            'database' => 'hehe',
+            'database' => 'maimeng',
             'username' => getenv('DB_USERNAME'),
             'password' => getenv('DB_PASSWORD'),
             'charset' => 'utf8',
