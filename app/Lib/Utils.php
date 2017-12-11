@@ -37,6 +37,7 @@ class Utils
     const CODE_CHANNEL_ORDER_ID_DUPLICATED = 23;
     const CODE_CHANNEL_ORDER_ID_NOT_EXIST = 24;
     const CODE_CHANNEL_ORDER_ID_PAID_YET = 25;
+    const CODE_VALIDATION_FAIL = 26;
 
 
     const CODE_MAP = [
@@ -66,6 +67,7 @@ class Utils
         Utils::CODE_CHANNEL_ORDER_ID_DUPLICATED => "渠道订单号重复",
         Utils::CODE_CHANNEL_ORDER_ID_NOT_EXIST => "渠道订单号不存在",
         Utils::CODE_CHANNEL_ORDER_ID_PAID_YET => "渠道订单号已支付",
+        Utils::CODE_VALIDATION_FAIL => "参数验证出错",
     ];
 
     static function echoContent($code, $data = null)
