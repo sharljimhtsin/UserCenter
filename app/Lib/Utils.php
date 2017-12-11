@@ -9,8 +9,14 @@
 namespace App\Lib;
 
 
+use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
+use Laravel\Lumen\Routing\ProvidesConvenienceMethods;
+
 class Utils
 {
+    use ProvidesConvenienceMethods;
     const CODE_OK = 0;
     const CODE_USER_NOT_EXIST = 1;
     const CODE_ACCOUNT_NOT_EXIST_OR_PASSWORD_ERROR = 2;
@@ -77,5 +83,44 @@ class Utils
         $arr["message"] = array_key_exists($code, Utils::CODE_MAP) ? Utils::CODE_MAP[$code] : "unknown";
         $arr["data"] = $data;
         return response()->json($arr);
+    }
+
+    private static $_instance = null;
+
+    static function getInstance()
+    {
+        if (is_null(self::$_instance)) {
+            self::$_instance = new Utils();
+        }
+        return self::$_instance;
+    }
+
+    const ECHO_MAP = [
+        "telephone" => "手机号码格式错误"
+    ];
+
+    /**
+     * @param Request $request
+     * @param $rules
+     * @return null
+     *
+     * 自定义错误验证
+     */
+    static function validation(Request $request, $rules)
+    {
+        try {
+            Utils::getInstance()->validate($request, $rules);
+        } catch (ValidationException $e) {
+            $errors = [];
+            foreach ($e->errors() as $k => $v) {
+                if (array_key_exists($k, Utils::ECHO_MAP)) {
+                    $errors[$k] = Utils::ECHO_MAP[$k];
+                } else {
+                    $errors[$k] = $v;
+                }
+            }
+            throw new HttpResponseException(Utils::echoContent(Utils::CODE_VALIDATION_FAIL, $errors));
+        }
+        return null;
     }
 }
