@@ -130,7 +130,7 @@ class AccountController extends Controller
      */
     public function telephoneLogin(Request $request)
     {
-        $this->validate($request, ["telephone" => ["required", "regex:/^((\d3)|(\d{3}\-))?13[0-9]\d{8}|15[89]\d{8}|18[0-9]\d{8}/"], "password" => "required|alpha_num|alpha_dash|min:6"]);
+        $this->validate($request, ["telephone" => ["required", "regex:/^1(1[0-9]|3[0-9]|4[57]|5[0-35-9]|6[6]|7[0135678]|8[0-9]|9[89])\d{8}$/"], "password" => "required|alpha_num|alpha_dash|min:6"]);
         $telephone = $request->input("telephone", "qwerty");
         $password = $request->input("password", "123456");
         $existResult = Account::query()->where([["user_key", "=", $telephone], ["status", "=", Account::NORMAL_STATUS]])->whereIn("account_type", [Account::TELEPHONE_LOGIN, Account::MAIMENG_LOGIN])->exists();
@@ -188,7 +188,7 @@ class AccountController extends Controller
      */
     public function telephoneQuickLogin(Request $request)
     {
-        $this->validate($request, ["telephone" => ["required", "regex:/^((\d3)|(\d{3}\-))?13[0-9]\d{8}|15[89]\d{8}|18[0-9]\d{8}/"], "smsCode" => "required"]);
+        $this->validate($request, ["telephone" => ["required", "regex:/^1(1[0-9]|3[0-9]|4[57]|5[0-35-9]|6[6]|7[0135678]|8[0-9]|9[89])\d{8}$/"], "smsCode" => "required"]);
         $telephone = $request->input("telephone", "13800138000");
         $smsCode = $request->input("smsCode", "0000");
         $smsCodeResult = SmsCode::query()->find($telephone);
@@ -266,7 +266,7 @@ class AccountController extends Controller
      */
     public function sendSmsCode(Request $request)
     {
-        $this->validate($request, ["telephone" => ["required", "regex:/^((\d3)|(\d{3}\-))?13[0-9]\d{8}|15[89]\d{8}|18[0-9]\d{8}/"], "user_id" => "required"]);
+        $this->validate($request, ["telephone" => ["required", "regex:/^1(1[0-9]|3[0-9]|4[57]|5[0-35-9]|6[6]|7[0135678]|8[0-9]|9[89])\d{8}$/"], "user_id" => "required"]);
         $telephone = $request->input("telephone", "13800138000");
         $keyLock = $telephone . "_SmsCd";
         if (Cache::has($keyLock)) {
@@ -301,7 +301,7 @@ class AccountController extends Controller
      */
     public function sendSmsCodeNoToken(Request $request)
     {
-        $this->validate($request, ["telephone" => ["required", "regex:/^((\d3)|(\d{3}\-))?13[0-9]\d{8}|15[89]\d{8}|18[0-9]\d{8}/"]]);
+        $this->validate($request, ["telephone" => ["required", "regex:/^1(1[0-9]|3[0-9]|4[57]|5[0-35-9]|6[6]|7[0135678]|8[0-9]|9[89])\d{8}$/"]]);
         $telephone = $request->input("telephone", "13800138000");
         $keyLock = $telephone . "_SmsCd";
         if (Cache::has($keyLock)) {
@@ -325,7 +325,7 @@ class AccountController extends Controller
      */
     public function verifyPhone(Request $request)
     {
-        $this->validate($request, ["telephone" => ["required", "regex:/^((\d3)|(\d{3}\-))?13[0-9]\d{8}|15[89]\d{8}|18[0-9]\d{8}/"], "smsCode" => "required", "user_id" => "required"]);
+        $this->validate($request, ["telephone" => ["required", "regex:/^1(1[0-9]|3[0-9]|4[57]|5[0-35-9]|6[6]|7[0135678]|8[0-9]|9[89])\d{8}$/"], "smsCode" => "required", "user_id" => "required"]);
         $telephone = $request->input("telephone", "13800138000");
         $smsCode = $request->input("smsCode", "0000");
         $user_id = $request->input("user_id", "9138");
@@ -376,7 +376,7 @@ class AccountController extends Controller
         $token = $request->input("token", "0000");
         //注册
         if (!$request->has("user_id")) {
-            $this->validate($request, ["telephone" => ["required", "regex:/^((\d3)|(\d{3}\-))?13[0-9]\d{8}|15[89]\d{8}|18[0-9]\d{8}/"], "smsCode" => "required", "password" => "required|alpha_num|alpha_dash|min:6"]);
+            $this->validate($request, ["telephone" => ["required", "regex:/^1(1[0-9]|3[0-9]|4[57]|5[0-35-9]|6[6]|7[0135678]|8[0-9]|9[89])\d{8}$/"], "smsCode" => "required", "password" => "required|alpha_num|alpha_dash|min:6"]);
 //            $telephoneExist = User::query()->where([["telephone", "=", $telephone]])->count("user_id");
 //            if ($telephoneExist > 0) {
 //                return Utils::echoContent(Utils::CODE_TELEPHONE_EXIST);
@@ -428,10 +428,10 @@ class AccountController extends Controller
             $keyReBind = $user_id . "reBind";
             if (Cache::has($keyReBind)) {
                 $reBind = true;
-                $this->validate($request, ["telephone" => ["required", "regex:/^((\d3)|(\d{3}\-))?13[0-9]\d{8}|15[89]\d{8}|18[0-9]\d{8}/"], "smsCode" => "required", "user_id" => "required", "token" => "required"]);
+                $this->validate($request, ["telephone" => ["required", "regex:/^1(1[0-9]|3[0-9]|4[57]|5[0-35-9]|6[6]|7[0135678]|8[0-9]|9[89])\d{8}$/"], "smsCode" => "required", "user_id" => "required", "token" => "required"]);
             } else {
                 $reBind = false;
-                $this->validate($request, ["telephone" => ["required", "regex:/^((\d3)|(\d{3}\-))?13[0-9]\d{8}|15[89]\d{8}|18[0-9]\d{8}/"], "smsCode" => "required", "password" => "required|alpha_num|alpha_dash|min:6", "user_id" => "required", "token" => "required"]);
+                $this->validate($request, ["telephone" => ["required", "regex:/^1(1[0-9]|3[0-9]|4[57]|5[0-35-9]|6[6]|7[0135678]|8[0-9]|9[89])\d{8}$/"], "smsCode" => "required", "password" => "required|alpha_num|alpha_dash|min:6", "user_id" => "required", "token" => "required"]);
             }
             $userResult = User::query()->find($user_id);
             if ($userResult) {
@@ -542,7 +542,7 @@ class AccountController extends Controller
      */
     public function resetPassword(Request $request)
     {
-        $this->validate($request, ["telephone" => ["required", "regex:/^((\d3)|(\d{3}\-))?13[0-9]\d{8}|15[89]\d{8}|18[0-9]\d{8}/"], "smsCode" => "required", "newPassword" => "required|alpha_num|alpha_dash|min:6"]);
+        $this->validate($request, ["telephone" => ["required", "regex:/^1(1[0-9]|3[0-9]|4[57]|5[0-35-9]|6[6]|7[0135678]|8[0-9]|9[89])\d{8}$/"], "smsCode" => "required", "newPassword" => "required|alpha_num|alpha_dash|min:6"]);
         $telephone = $request->input("telephone", "13800138000");
         $smsCode = $request->input("smsCode", "0000");
         $newPassword = $request->input("newPassword", "1234");
