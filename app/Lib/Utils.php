@@ -33,6 +33,10 @@ class Utils
     const CODE_CHANNEL_EXIST = 19;
     const CODE_NO_DATA = 20;
     const CODE_CHANNEL_ALREADY_APPROVED = 21;
+    const CODE_CHANNEL_USER_NOT_EXIST = 22;
+    const CODE_CHANNEL_ORDER_ID_DUPLICATED = 23;
+    const CODE_CHANNEL_ORDER_ID_NOT_EXIST = 24;
+    const CODE_CHANNEL_ORDER_ID_PAID_YET = 25;
 
 
     const CODE_MAP = [
@@ -58,6 +62,10 @@ class Utils
         Utils::CODE_CHANNEL_EXIST => "渠道已存在",
         Utils::CODE_NO_DATA => "无数据",
         Utils::CODE_CHANNEL_ALREADY_APPROVED => "渠道已经过审",
+        Utils::CODE_CHANNEL_USER_NOT_EXIST => "渠道用户不存在",
+        Utils::CODE_CHANNEL_ORDER_ID_DUPLICATED => "渠道订单号重复",
+        Utils::CODE_CHANNEL_ORDER_ID_NOT_EXIST => "渠道订单号不存在",
+        Utils::CODE_CHANNEL_ORDER_ID_PAID_YET => "渠道订单号已支付",
     ];
 
     static function echoContent($code, $data = null)

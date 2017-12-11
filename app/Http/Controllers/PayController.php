@@ -16,6 +16,7 @@ use App\Lib\Tenpay\QpayMchAPI;
 use App\Lib\Tenpay\QpayMchUtil;
 use App\Lib\IAppPay\Base;
 use App\Lib\IAppPay\Config;
+use App\Lib\Utils;
 use App\Mapping;
 use App\PayOrder;
 use Illuminate\Http\Request;
@@ -41,11 +42,17 @@ class PayController extends Controller
         return md5(uniqid(md5(microtime(true)), true));
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     *
+     * 添加游戏内订单号至平台
+     */
     public function add(Request $request)
     {
         $user = $request->user();
         if (is_null($user)) {
-            return response()->json(["error" => "user_id error"]);
+            return Utils::echoContent(Utils::CODE_USER_NOT_EXIST);
         }
         $user_id = $request->input("user_id");
         $channel_id = $request->input("channel_id");
@@ -61,27 +68,25 @@ class PayController extends Controller
         $product_name = $request->input("product_name", "unknown");
         $product_desc = $request->input("product_desc", "unknown");
         $notify_url = $request->input("notify_url", "");
-        $sign = $request->input("sign", null);
-        if (is_null($channel_id) || is_null($channel_order_id) || is_null($money) || is_null($role_id) || is_null($product_id) || is_null($sign)) {
-            return response()->json(["error" => "param error"]);
-        }
+        $sign = $request->input("sign", "");
+        $this->validate($request, ["user_id" => "required", "channel_id" => "required", "channel_order_id" => "required", "money" => "required", "role_id" => "required", "product_id" => "required", "sign" => "required"]);
         $channelResult = Channel::getQuery()->find($channel_id);
         if (is_null($channelResult)) {
-            return response()->json(["error" => "channel not exist"]);
+            return Utils::echoContent(Utils::CODE_CHANNEL_NOT_EXIST);
         }
         $channelObj = $channelResult->toArray();
         $mappingResult = Mapping::getQuery($channelObj["alias"])->where([["channel_id", "=", $channel_id], ["channel_uid", "=", $role_id], ["user_id", "=", $user_id]])->first();
         if (is_null($mappingResult)) {
-            return response()->json(["error" => "channel user not exist"]);
+            return Utils::echoContent(Utils::CODE_CHANNEL_USER_NOT_EXIST);
         }
         $post = $request->except(["sign"]);
         $serverSign = $this->calcSign($post, $channelObj["channel_secret"]);
         if ($sign != $serverSign) {
-            return response()->json(["error" => "sign not match"]);
+            return Utils::echoContent(Utils::CODE_SIGN_NOT_MATCH);
         }
         $existResult = PayOrder::getQuery($channelObj["alias"])->where([["channel_id", "=", $channel_id], ["channel_order_id", "=", $channel_order_id]])->exists();
         if ($existResult) {
-            return response()->json(["error" => "channel order id duplicated"]);
+            return Utils::echoContent(Utils::CODE_CHANNEL_ORDER_ID_DUPLICATED);
         }
         $model = PayOrder::getQuery($channelObj["alias"])->newModelInstance();
         $data = [
@@ -103,7 +108,7 @@ class PayController extends Controller
             "notify_url" => $notify_url
         ];
         $model->fill($data)->save();
-        return response()->json(["payOrder" => $data]);
+        return Utils::echoContent(Utils::CODE_OK, ["payOrder" => $data]);
     }
 
     private function calcSign($post, $secretKey)
@@ -124,50 +129,54 @@ class PayController extends Controller
     const TENPAY = 3;
     const IAPPPAY = 4;
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     *
+     * 生成对应支付平台支付链接以供跳转
+     */
     public function pay(Request $request)
     {
         $user = $request->user();
         if (is_null($user)) {
-            return response()->json(["error" => "user_id error"]);
+            return Utils::echoContent(Utils::CODE_USER_NOT_EXIST);
         }
-        $pay_method = $request->input("pay_method", self::WECHAT);
+        $pay_method = $request->input("pay_method", self::IAPPPAY);
         $user_id = $request->input("user_id");
         $order_no = $request->input("order_no");
         $channel_id = $request->input("channel_id");
         $channel_order_id = $request->input("channel_order_id");
         $role_id = $request->input("role_id");
         $product_id = $request->input("product_id");
-        $sign = $request->input("sign", null);
-        if (is_null($channel_id) || is_null($channel_order_id) || is_null($order_no) || is_null($role_id) || is_null($product_id) || is_null($sign)) {
-            return response()->json(["error" => "param error"]);
-        }
+        $sign = $request->input("sign", "");
+        $this->validate($request, ["user_id" => "required", "order_no" => "required", "channel_id" => "required", "channel_order_id" => "required", "role_id" => "required", "product_id" => "required", "sign" => "required"]);
         $channelResult = Channel::getQuery()->find($channel_id);
         if (is_null($channelResult)) {
-            return response()->json(["error" => "channel not exist"]);
+            return Utils::echoContent(Utils::CODE_CHANNEL_NOT_EXIST);
         }
         $channelObj = $channelResult->toArray();
         $mappingResult = Mapping::getQuery($channelObj["alias"])->where([["channel_id", "=", $channel_id], ["channel_uid", "=", $role_id], ["user_id", "=", $user_id]])->first();
         if (is_null($mappingResult)) {
-            return response()->json(["error" => "channel user not exist"]);
+            return Utils::echoContent(Utils::CODE_CHANNEL_USER_NOT_EXIST);
         }
         $post = $request->except(["sign"]);
         $serverSign = $this->calcSign($post, $channelObj["channel_secret"]);
         if ($sign != $serverSign) {
-            return response()->json(["error" => "sign not match"]);
+            return Utils::echoContent(Utils::CODE_SIGN_NOT_MATCH);
         }
         $existResult = PayOrder::getQuery($channelObj["alias"])->where([["channel_id", "=", $channel_id], ["channel_order_id", "=", $channel_order_id], ["order_no", "=", $order_no], ["user_id", "=", $user_id]])->first();
         if (is_null($existResult)) {
-            return response()->json(["error" => "channel order id not exist"]);
+            return Utils::echoContent(Utils::CODE_CHANNEL_ORDER_ID_NOT_EXIST);
         }
         $existObj = $existResult->toArray();
         if (PayOrder::STATUS_CREATE != $existObj["status"]) {
-            return response()->json(["error" => "channel order id paid yet"]);
+            return Utils::echoContent(Utils::CODE_CHANNEL_ORDER_ID_PAID_YET);
         }
         if ($channelObj["is_test"] == 1) {
             $existObj["status"] = PayOrder::STATUS_PAYED;
             $existResult->fill($existObj)->save();
             $this->notifyChannel($existObj, $channelObj);
-            return response()->json(["msg" => "ok due to sandbox"]);
+            return Utils::echoContent(Utils::CODE_OK, ["msg" => "ok due to sandbox"]);
         } else {
             $url = "http://baidu.com";
             switch ($pay_method) {
@@ -185,7 +194,7 @@ class PayController extends Controller
                     $url = $this->buildIAppPayUrl($order_no, $existObj["money"], $product_id, $existObj["product_name"], $channelObj["channel_id"], $existObj["user_id"]);
                     break;
             }
-            return redirect()->to($url);
+            return Utils::echoContent(Utils::CODE_OK, ["url" => $url]);
         }
     }
 
