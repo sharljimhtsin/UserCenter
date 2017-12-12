@@ -556,7 +556,24 @@ class AccountController extends Controller
         }
         $accountResult = Account::query()->where([["user_key", "=", $telephone], ["account_type", "=", Account::TELEPHONE_LOGIN], ["status", "=", Account::NORMAL_STATUS]])->first();
         if (is_null($accountResult)) {
-            return Utils::echoContent(Utils::CODE_ACCOUNT_NOT_EXIST);
+            $user_id = $this->genUserUid();
+            $accountResult = Account::query()->create(["user_key" => $telephone, "password" => md5($newPassword), "account_type" => Account::TELEPHONE_LOGIN, "union_user_id" => $user_id, "status" => Account::NORMAL_STATUS]);
+            $accountObj = $accountResult->toArray();
+            $userResult = User::query()->create(["user_id" => $user_id]);
+            $userObj = $userResult->toArray();
+            $userObj["nickname"] = "用户_" . $this->getRandomSuffix();
+            $userObj["telephone"] = $telephone;
+            $userObj["avatar"] = "http://api.playsm.com/resource/img/avator.png";
+            $userObj["birthday"] = date("Y-m-d H:i:s", strtotime("2000-01-01"));
+            $userObj["sex"] = User::SEX_MALE;
+            $userObj["signature"] = "这家伙很萌,什么也没留下";
+            $userObj["role"] = User::NORMAL_ROLE;
+            $userObj["status"] = User::NORMAL_STATUS;
+            $userResult->fill($userObj);
+            $userResult->save();
+            $tokenStr = $this->getRandomToken();
+            Token::query()->updateOrCreate(["user_id" => $userObj["user_id"]], ["user_id" => $userObj["user_id"], "token" => $tokenStr, "expire_time" => $this->getTokenTTLTime()]);
+            return Utils::echoContent(Utils::CODE_OK, ["token" => $tokenStr, "account" => $accountObj, "user" => $userObj]);
         }
         $accountObj = $accountResult->toArray();
         if (is_null($accountObj["union_user_id"])) {
