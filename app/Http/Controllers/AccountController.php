@@ -462,7 +462,11 @@ class AccountController extends Controller
                     }
                     $userObj["telephone"] = $telephone;
                     $userResult->fill($userObj)->save();
-                    $accountResult = Account::query()->updateOrCreate(["union_user_id" => $user_id, "account_type" => Account::TELEPHONE_LOGIN, "status" => Account::NORMAL_STATUS], ["user_key" => $telephone, "password" => md5($password)]);
+                    if ($notBind) {
+                        $accountResult = Account::query()->updateOrCreate(["union_user_id" => $user_id, "account_type" => Account::TELEPHONE_LOGIN, "status" => Account::NORMAL_STATUS], ["user_key" => $telephone, "password" => md5($password)]);
+                    } else {
+                        $accountResult = Account::query()->updateOrCreate(["union_user_id" => $user_id, "account_type" => Account::TELEPHONE_LOGIN, "status" => Account::NORMAL_STATUS], ["user_key" => $telephone]);
+                    }
                     // once telephone bind-ed,disable quick login of it
                     Account::query()->where([["union_user_id", "=", $user_id], ["account_type", "=", Account::TEMP_LOGIN]])->update(["status" => Account::DISABLE_STATUS]);
                     return Utils::echoContent(Utils::CODE_OK, ["account" => $accountResult->toArray(), "user" => $userObj]);
