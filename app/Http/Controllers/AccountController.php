@@ -86,17 +86,20 @@ class AccountController extends Controller
     /**
      * @param $username
      * @param $password
-     * @return array|null
+     * @return array|null|boolean
      *
      * 尝试登录maimeng 账号
      */
     private function tryMaimengAccount($username, $password)
     {
-        $accountResult = MaimengAccount::getQuery()->where([["username", "=", $username], ["password", "=", $this->encryptPassword($password)], ["status", "=", "1"]])->first();
+        $accountResult = MaimengAccount::getQuery()->where([["username", "=", $username], ["status", "=", "1"]])->first();
         if (is_null($accountResult)) {
             return null;
         }
         $accountObj = $accountResult->toArray();
+        if ($accountObj["password"] != $this->encryptPassword($password)) {
+            return false;
+        }
         $userResult = MaimengUser::getQuery()->find($accountObj["unionId"]);
         if (is_null($userResult)) {
             return null;
@@ -138,6 +141,9 @@ class AccountController extends Controller
             $loginData = $this->tryMaimengAccount($telephone, $password);
             if (is_null($loginData)) {
                 return Utils::echoContent(Utils::CODE_ACCOUNT_NOT_EXIST);
+            }
+            if (is_bool($loginData) && ($loginData == false)) {
+                return Utils::echoContent(Utils::CODE_ACCOUNT_PASSWORD_ERROR);
             }
             $accountMaiMeng = $loginData[0];
             $userMaiMeng = $loginData[1];
