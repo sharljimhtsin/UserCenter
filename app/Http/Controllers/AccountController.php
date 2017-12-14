@@ -147,7 +147,8 @@ class AccountController extends Controller
             $userResult = User::query()->create(["user_id" => $user_id, "status" => User::NORMAL_STATUS, "role" => User::NORMAL_ROLE]);
             $userObj = $userResult->toArray();
             $userObj["user_id"] = $accountObj["union_user_id"];
-            $userObj["nickname"] = "麦萌_" . $userMaiMeng["nickname"];
+            $userObj["nickname"] = $userMaiMeng["nickname"];
+            $userObj["telephone"] = $userMaiMeng["telephone"];
             $userObj["avatar"] = $userMaiMeng["avatar"];
             $userObj["birthday"] = $userMaiMeng["birthday"];
             $userObj["sex"] = $userMaiMeng["sex"];
@@ -461,7 +462,7 @@ class AccountController extends Controller
                     }
                     $userObj["telephone"] = $telephone;
                     $userResult->fill($userObj)->save();
-                    $accountResult = Account::query()->create(["user_key" => $telephone, "password" => md5($password), "account_type" => Account::TELEPHONE_LOGIN, "union_user_id" => $user_id, "status" => Account::NORMAL_STATUS]);
+                    $accountResult = Account::query()->updateOrCreate(["union_user_id" => $user_id, "account_type" => Account::TELEPHONE_LOGIN, "status" => Account::NORMAL_STATUS], ["user_key" => $telephone, "password" => md5($password)]);
                     // once telephone bind-ed,disable quick login of it
                     Account::query()->where([["union_user_id", "=", $user_id], ["account_type", "=", Account::TEMP_LOGIN]])->update(["status" => Account::DISABLE_STATUS]);
                     return Utils::echoContent(Utils::CODE_OK, ["account" => $accountResult->toArray(), "user" => $userObj]);
